@@ -3,9 +3,8 @@ const express = require("express");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-const errorHandler = require("../middleware/errors.js");
+const errorHandler = require("../middlewares/errors.js");
 const indexRoutes = require("../routes/index.routes");
-
 
 // ℹ️ Initialize the app
 const app = express();
