@@ -1,9 +1,10 @@
 const puppeteer = require('puppeteer-extra');
 const stealthPlugin = require('puppeteer-extra-plugin-stealth');
 const fs = require('fs');
+const { asyncDisposeSymbol } = require('puppeteer');
 
 
-const delay = async (min = 1000, max = 2000, randomIncrease = 0) => {
+const delay = async (min = 2000, max = 3000, randomIncrease = 0) => {
     if (randomIncrease) {
         min += Math.random() * randomIncrease;
         max += Math.random() * randomIncrease;
@@ -12,15 +13,15 @@ const delay = async (min = 1000, max = 2000, randomIncrease = 0) => {
     return new Promise((resolve) => setTimeout(resolve, time));
 };
 
-(async () => {
-    //! GOOOOOOOOOOOOOOOOOD
+const initializeBrowserAndPage = async () => {
+
     puppeteer.use(stealthPlugin());
     const browser = await puppeteer.launch({
         headless: false, // Set to false to see the browser in action
         args: [
             `--no-sandbox`,
             `--disable-setuid-sandbox`,
-            `--proxy-server=http://us-wa.proxymesh.com:31280`,
+            `--proxy-server=http://fr.proxymesh.com:31280`,
             `--auto-open-devtools-for-tabs`
         ],
         defaultViewport: {
@@ -37,112 +38,106 @@ const delay = async (min = 1000, max = 2000, randomIncrease = 0) => {
         delete navigator.__proto__.webdriver;
     });
 
-    // // If your proxy requires authentication, you can set it like this:
-    // // await page.authenticate({
-    // //     username: 'your-proxy-username', // Replace with your proxy username
-    // //     password: 'your-proxy-password', // Replace with your proxy password
-    // // });
-
-    // await page.goto('https://www.linkedin.com/jobs/search', {
-    //     waitUntil: 'networkidle2', // Wait until the network is idle
+    // If your proxy requires authentication, you can set it like this:
+    // await page.authenticate({
+    //     username: 'your-proxy-username', // Replace with your proxy username
+    //     password: 'your-proxy-password', // Replace with your proxy password
     // });
 
-    // await delay(2000, 3000);
+    return { page };
+}
 
-    // const currentURL = await page.url();
-    // console.log(`Current URL: ${currentURL}`);
-    // if (!currentURL.includes('jobs/search')) {
-    //     await delay(2000, 3000);
-    //     await page.goto('https://www.linkedin.com/jobs/search', {
-    //         waitUntil: 'networkidle2', // Wait until the network is idle
-    //     });
-    // }
-
-    // try {
-    //     await page.waitForSelector('button.artdeco-button.artdeco-button--inverse.artdeco-button--2.artdeco-button--primary[data-tracking-control-name="ga-cookie.consent.accept.v4"]', { timeout: 500 })
-    //     await delay(2000, 3000);
-    //     await page.locator('button.artdeco-button.artdeco-button--inverse.artdeco-button--2.artdeco-button--primary[data-tracking-control-name="ga-cookie.consent.accept.v4"]').click();
-    // } catch (err) {
-    //     console.log('No cookie');
-    // }
+const goToURL = async (page) => {
+    await page.goto('https://www.linkedin.com/jobs/search', {
+        waitUntil: 'networkidle2', // Wait until the network is idle
+    });
 
 
+    const currentURL = await page.url();
+    console.log(`Current URL: ${currentURL}`);
+    if (!currentURL.includes('jobs/search')) {
+        await delay();
+        await page.goto('https://www.linkedin.com/jobs/search', {
+            waitUntil: 'networkidle2', // Wait until the network is idle
+        });
+    }
+
+}
 
 
-    // await page.locator('button[data-tracking-control-name="public_jobs_search-switcher-opener"]').click();
+(async () => {
 
-    // await delay(2000, 3000);
-
-    // const jodDescription = 'chef';
-    // for (const char of jodDescription) {
-    //     await page.type('input[aria-controls="job-search-bar-keywords-typeahead-list"]', char); // No delay here, we handle it ourselves
-    //     await delay(200, 500, 500); // Variable delay between characters
-    // }
-    // await delay(1000, 2000);
-    // await page.keyboard.press('Enter');
-
-    // await delay(2000, 3000);
-    // await page.locator('button[data-tracking-control-name="public_jobs_search-switcher-opener"]').click();
-
-    // await delay(2000, 3000);
-    // await page.locator('input[aria-controls="job-search-bar-location-typeahead-list"]').click();
-
-    // await delay(1000, 2000);
-
-    // for (let i = 0; i < 18; i++) {
-    //     await page.keyboard.down('Backspace');
-    //     await delay(200, 500);
-    // }
-
-    // const text = 'new york';
-    // for (const char of text) {
-    //     await page.type('input[aria-controls="job-search-bar-location-typeahead-list"]', char); // No delay here, we handle it ourselves
-    //     await delay(200, 500, 500); // Variable delay between characters
-    // }
-    // await delay(1000, 2000);
-    // await page.keyboard.press('Enter');
-
-    // await delay(2000, 3000);
-    // await page.locator('button[aria-label="Remote filter. Clicking this button displays all Remote filter options."]').click();
-    // await delay(2000, 3000);
-    // await page.locator('#f_WT-2').click();
-    // await delay(2000, 3000);
-    // await page.locator('button.filter__submit-button[data-tracking-control-name="public_jobs_f_WT"]').click();
-
-    // await delay(2000, 3000);
-    // await page.locator('button[aria-label="Date posted filter. Any time filter is currently applied. Clicking this button displays all Date posted filter options."]').click();
-    // await delay(2000, 3000);
-    // await page.locator('#f_TPR-3').click();
-    // await delay(2000, 3000);
-    // await page.locator('button.filter__submit-button[data-tracking-control-name="public_jobs_f_TPR"]').click();
-
-    //! GOOOOOOOOOOOOOOOOOD
-
-    // const divContent = await page.evaluate(() => {
-    //     const div = document.querySelector('#main-content');
-    //     return div ? div.innerHTML : 'Div not found';
-    // });
-
-    // fs.writeFile('divContent.html', divContent, 'utf8', (err) => {
-    //     if (err) {
-    //         console.error('Error writing file:', err);
-    //     } else {
-    //         console.log('File has been saved!');
-    //     }
-    // });
+    const { page } = await initializeBrowserAndPage();
+    goToURL(page);
 
 
     try {
-        // Read the file content synchronously
-        const fileContent = fs.readFileSync('divContent.html', 'utf8');
-        // console.log('File content loaded into variable:', fileContent);
-        await page.setContent(fileContent);
-        // You can now use `fileContent` as needed
+        await delay();
+        await page.locator('button.artdeco-global-alert-action').click();
     } catch (err) {
-        console.error('Error reading file:', err);
+        console.log('No cookie');
     }
+
+    await delay();
+    await page.locator('button[data-tracking-control-name="public_jobs_search-switcher-opener"]').click();
+
+    await delay();
+
+    const jodDescription = 'nodejs';
+    for (const char of jodDescription) {
+        await page.type('input[aria-controls="job-search-bar-keywords-typeahead-list"]', char); // No delay here, we handle it ourselves
+        await delay(200, 500, 500); // Variable delay between characters
+    }
+    await delay();
+    await page.keyboard.press('Enter');
+
+    await delay();
+    await page.locator('button[data-tracking-control-name="public_jobs_search-switcher-opener"]').click();
+
+    await delay();
+    await page.locator('input[aria-controls="job-search-bar-location-typeahead-list"]').click();
+
+    await delay();
+
+    for (let i = 0; i < 18; i++) {
+        await page.keyboard.down('Backspace');
+        await delay(200, 500);
+    }
+
+    const text = 'new york';
+    for (const char of text) {
+        await page.type('input[aria-controls="job-search-bar-location-typeahead-list"]', char); // No delay here, we handle it ourselves
+        await delay(200, 500, 500); // Variable delay between characters
+    }
+    await delay();
+    await page.keyboard.press('Enter');
+
+
+
+
+    console.log('remote');
+    await delay();
+    await page.locator('button[aria-label="Remote filter. Clicking this button displays all Remote filter options."]').click();
+    await delay();
+    await page.locator('#f_WT-2').click();
+    await delay();
+    await page.locator('button.filter__submit-button[data-tracking-control-name="public_jobs_f_WT"]').click();
+
+
+    console.log('date');
+    await delay();
+    await page.locator('button[aria-label="Date posted filter. Any time filter is currently applied. Clicking this button displays all Date posted filter options."]').click();
+    await delay();
+    await page.locator('#f_TPR-3').click();
+    await delay();
+    await page.locator('button.filter__submit-button[data-tracking-control-name="public_jobs_f_TPR"]').click();
+
+
+    await delay(3000, 5000);
+
+    console.log('scraping...');
     const items = await page.evaluate(() => {
-        const liElements = document.querySelectorAll('ul.jobs-search__results-list > li');
+        const liElements = document.querySelectorAll('section.two-pane-serp-page__results-list > ul.jobs-search__results-list > li');
         const result = Array.from(liElements).map(li => {
             const card = li.querySelector('div.base-card');
 
@@ -150,7 +145,7 @@ const delay = async (min = 1000, max = 2000, randomIncrease = 0) => {
                 title: card?.querySelector('h3.base-search-card__title')?.textContent.trim() || 'N/A',
                 company: card?.querySelector('h4.base-search-card__subtitle a')?.textContent.trim() || 'N/A',
                 location: card?.querySelector('span.job-search-card__location')?.textContent.trim() || 'N/A',
-                datePosted: card?.querySelector('time.job-search-card__listdate')?.textContent.trim() || 'N/A',
+                datePosted: card?.querySelector('time.job-search-card__listdate--new')?.getAttribute('datetime') || 'N/A',
                 jobLink: card?.querySelector('a.base-card__full-link')?.href || 'N/A',
                 companyLogo: card?.querySelector('img.artdeco-entity-image')?.src || 'N/A'
             };
@@ -166,51 +161,88 @@ const delay = async (min = 1000, max = 2000, randomIncrease = 0) => {
 
 
 
-    // const element = await page.locator('div.QS5gu.sy4vM').click();
-    // Target the div inside a button with specific text
-    // const element = await page.locator('//button//div[text()="Accept all"]').click();
-    // await page.locator('//button[.//div[contains(@class, "QS5gu") and contains(@class, "sy4vM")]]').click();
 
-    // await page.waitForSelector('input[value="Google Search"]');
-    // await page.click('input.lsb[value="I\'m Feeling Lucky"]');
-    // await delay(6000, 8000); // Random delay between 1-2 seconds
-
-    // await page.click('[aria-label="Stay signed out"]');
-
-    // const button = await page.$('button'); // Assuming buttons are in <button> tags
-    // if (button) {
-    //     const text = await page.evaluate(el => el.textContent.trim(), button);
-    //     if (text === 'Stay signed out') {
-    //         await button.click();
-    //     }
-    // }
-
-    // const button = await page.$('button'); // Assuming buttons are in <button> tags
-    // if (button) {
-    //     console.log('Button found');
-    //     const text = await page.evaluate(el => el.textContent.trim(), button);
-    //     console.log(text);
-    //     if (text === 'Stay signed out') {
-    //         await button.click();
-    //     }
-    // }
 
 
 
     await delay(100000, 200000); // Random delay between 1-2 seconds
 
 
-    // await page.goto('https://www.linkedin.com/jobs/search', {
-    //     waitUntil: 'networkidle2', // Wait until the network is idle
-    // });
-
-
-
-
     // await browser.close();
 
-    // console.log('Screenshot taken and browser closed');
 })();
+
+//? Old stuff
+
+// const divContent = await page.evaluate(() => {
+//     const div = document.querySelector('#main-content');
+//     return div ? div.innerHTML : 'Div not found';
+// });
+
+// fs.writeFile('divContent.html', divContent, 'utf8', (err) => {
+//     if (err) {
+//         console.error('Error writing file:', err);
+//     } else {
+//         console.log('File has been saved!');
+//     }
+// });
+
+
+// try {
+//     // Read the file content synchronously
+//     const fileContent = fs.readFileSync('divContent.html', 'utf8');
+//     // console.log('File content loaded into variable:', fileContent);
+//     await page.setContent(fileContent);
+//     // You can now use `fileContent` as needed
+// } catch (err) {
+//     console.error('Error reading file:', err);
+// }
+
+
+
+// const element = await page.locator('div.QS5gu.sy4vM').click();
+// Target the div inside a button with specific text
+// const element = await page.locator('//button//div[text()="Accept all"]').click();
+// await page.locator('//button[.//div[contains(@class, "QS5gu") and contains(@class, "sy4vM")]]').click();
+
+// await page.waitForSelector('input[value="Google Search"]');
+// await page.click('input.lsb[value="I\'m Feeling Lucky"]');
+// await delay(6000, 8000); // Random delay between 1-2 seconds
+
+// await page.click('[aria-label="Stay signed out"]');
+
+// const button = await page.$('button'); // Assuming buttons are in <button> tags
+// if (button) {
+//     const text = await page.evaluate(el => el.textContent.trim(), button);
+//     if (text === 'Stay signed out') {
+//         await button.click();
+//     }
+// }
+
+// const button = await page.$('button'); // Assuming buttons are in <button> tags
+// if (button) {
+//     console.log('Button found');
+//     const text = await page.evaluate(el => el.textContent.trim(), button);
+//     console.log(text);
+//     if (text === 'Stay signed out') {
+//         await button.click();
+//     }
+// }
+
+
+
+
+// await page.goto('https://www.linkedin.com/jobs/search', {
+//     waitUntil: 'networkidle2', // Wait until the network is idle
+// });
+
+
+
+
+
+// console.log('Screenshot taken and browser closed');
+
+
 
 // async isSelectorExists(selector: string) {
 //     return await this._page.$(selector).catch(() => null) !== null;
