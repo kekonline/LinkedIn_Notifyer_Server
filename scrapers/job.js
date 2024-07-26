@@ -1,176 +1,222 @@
 const puppeteer = require('puppeteer-extra');
 const stealthPlugin = require('puppeteer-extra-plugin-stealth');
-const fs = require('fs');
-const { asyncDisposeSymbol } = require('puppeteer');
 
-
-const delay = async (min = 2000, max = 3000, randomIncrease = 0) => {
+const delay = async (min = 3000, max = 4000, randomIncrease = 0) => {
     if (randomIncrease) {
         min += Math.random() * randomIncrease;
         max += Math.random() * randomIncrease;
     }
     const time = Math.random() * (max - min) + min;
-    return new Promise((resolve) => setTimeout(resolve, time));
+    return new Promise(async (resolve) => setTimeout(resolve, time));
 };
 
 const initializeBrowserAndPage = async () => {
 
-    puppeteer.use(stealthPlugin());
-    const browser = await puppeteer.launch({
-        headless: false, // Set to false to see the browser in action
-        args: [
-            `--no-sandbox`,
-            `--disable-setuid-sandbox`,
-            `--proxy-server=http://fr.proxymesh.com:31280`,
-            `--auto-open-devtools-for-tabs`
-        ],
-        defaultViewport: {
-            width: 430,
-            height: 932,
-            deviceScaleFactor: 1,
-        }
-    });
+    try {
+        puppeteer.use(stealthPlugin());
+        const browser = await puppeteer.launch({
+            headless: false, // Set to false to see the browser in action
+            args: [
+                `--no-sandbox`,
+                `--disable-setuid-sandbox`,
+                `--proxy-server=http://fr.proxymesh.com:31280`,
+                `--auto-open-devtools-for-tabs`
+            ],
+            defaultViewport: {
+                width: 430,
+                height: 932,
+                deviceScaleFactor: 1,
+            }
+        });
 
-    const pages = await browser.pages();
-    const page = pages[0];
-    await page.setJavaScriptEnabled(true);
-    await page.evaluateOnNewDocument(() => {
-        delete navigator.__proto__.webdriver;
-    });
+        const pages = await browser.pages();
+        const page = pages[0];
+        await page.setJavaScriptEnabled(true);
+        await page.evaluateOnNewDocument(() => {
+            delete navigator.__proto__.webdriver;
+        });
 
-    // If your proxy requires authentication, you can set it like this:
-    // await page.authenticate({
-    //     username: 'your-proxy-username', // Replace with your proxy username
-    //     password: 'your-proxy-password', // Replace with your proxy password
-    // });
+        // If your proxy requires authentication, you can set it like this:
+        // await page.authenticate({
+        //     username: 'your-proxy-username', // Replace with your proxy username
+        //     password: 'your-proxy-password', // Replace with your proxy password
+        // });
 
-    return { page };
+        return { page, browser };
+    } catch (error) {
+        throw new Error('Error Initializing Browser And Page:', error);
+    }
 }
 
 const goToURL = async (page) => {
-    await page.goto('https://www.linkedin.com/jobs/search', {
-        waitUntil: 'networkidle2', // Wait until the network is idle
-    });
-
-
-    const currentURL = await page.url();
-    console.log(`Current URL: ${currentURL}`);
-    if (!currentURL.includes('jobs/search')) {
-        await delay();
+    try {
         await page.goto('https://www.linkedin.com/jobs/search', {
             waitUntil: 'networkidle2', // Wait until the network is idle
         });
+        await delay();
+        const currentURL = await page.url();
+        if (!currentURL.includes('jobs/search')) {
+            await delay();
+            await page.goto('https://www.linkedin.com/jobs/search', {
+                waitUntil: 'networkidle2', // Wait until the network is idle
+            });
+        }
     }
+    catch (error) {
+        throw new Error('Error Navigating To URL:', error);
+    }
+}
+
+const acceptCookies = async (page) => {
+    console.log('Accept Cookies');
+
+    await delay();
+    if (await !page.$('button.artdeco-global-alert-action')) {
+        console.log('No Cookie Button Found');
+        return;
+    }
+    console.log('Accept Cookies');
+    await page.locator('button.artdeco-global-alert-action').click();
 
 }
 
-
-(async () => {
-
-    const { page } = await initializeBrowserAndPage();
-    goToURL(page);
-
-
+const insertJob = async (page, jobDescription) => {
     try {
+        console.log('Set Job');
+        await delay(4000, 5000);
+        if (await !page.$('button[data-tracking-control-name="public_jobs_search-switcher-opener')) {
+            throw new Error('No Job Button Found');
+        }
+        await page.locator('button[data-tracking-control-name="public_jobs_search-switcher-opener"]').click();
         await delay();
-        await page.locator('button.artdeco-global-alert-action').click();
-    } catch (err) {
-        console.log('No cookie');
+        for (const char of jobDescription) {
+            await page.type('input[aria-controls="job-search-bar-keywords-typeahead-list"]', char); // No delay here, we handle it ourselves
+            await delay(200, 500, 500); // Variable delay between characters
+        }
+        await delay();
+        await page.keyboard.press('Enter');
+    } catch (error) {
+        throw new Error('Error Inserting Job:', error);
+    }
+}
+
+const insertCountry = async (page, country) => {
+    try {
+        console.log('Set Country');
+        await delay(4000, 5000);
+        if (await !page.$('button[data-tracking-control-name="public_jobs_search-switcher-opener"]')) {
+            throw new Error('No Country Button Found');
+        }
+        await page.locator('button[data-tracking-control-name="public_jobs_search-switcher-opener"]').click();
+
+        await delay();
+        await page.locator('input[aria-controls="job-search-bar-location-typeahead-list"]').click();
+
+        await delay();
+
+        for (let i = 0; i < 18; i++) {
+            await page.keyboard.down('Backspace');
+            await delay(200, 500);
+        }
+
+        for (const char of country) {
+            await page.type('input[aria-controls="job-search-bar-location-typeahead-list"]', char);
+            await delay(200, 500, 500);
+        }
+        await delay();
+        await page.keyboard.press('Enter');
+    } catch (error) {
+        throw new Error('Error Inserting Country:', error);
     }
 
-    await delay();
-    await page.locator('button[data-tracking-control-name="public_jobs_search-switcher-opener"]').click();
 
-    await delay();
+}
 
-    const jodDescription = 'nodejs';
-    for (const char of jodDescription) {
-        await page.type('input[aria-controls="job-search-bar-keywords-typeahead-list"]', char); // No delay here, we handle it ourselves
-        await delay(200, 500, 500); // Variable delay between characters
+const setRemoteWork = async (page) => {
+    try {
+        console.log('Set Remote Work');
+        await delay(4000, 5000);
+        if (await !page.$('button[aria-label="Remote filter. Clicking this button displays all Remote filter options."]')) {
+            throw new Error('No Work Type Button Found');
+        }
+        await page.locator('button[aria-label="Remote filter. Clicking this button displays all Remote filter options."]').click();
+        await delay();
+        await page.locator('#f_WT-2').click();
+        await delay();
+        await page.locator('button.filter__submit-button[data-tracking-control-name="public_jobs_f_WT"]').click();
+    } catch (error) {
+        throw new Error('Error Setting Remote Work:', error);
     }
-    await delay();
-    await page.keyboard.press('Enter');
+}
 
-    await delay();
-    await page.locator('button[data-tracking-control-name="public_jobs_search-switcher-opener"]').click();
-
-    await delay();
-    await page.locator('input[aria-controls="job-search-bar-location-typeahead-list"]').click();
-
-    await delay();
-
-    for (let i = 0; i < 18; i++) {
-        await page.keyboard.down('Backspace');
-        await delay(200, 500);
+const setJobsLast24Hours = async (page) => {
+    try {
+        console.log('Set Last 24 Hour Jobs');
+        await delay(4000, 5000);
+        if (await !page.$('button[aria-label="Date posted filter. Any time filter is currently applied. Clicking this button displays all Date posted filter options."]')) {
+            throw new Error('No Time Frame Button Found');
+        }
+        await page.locator('button[aria-label="Date posted filter. Any time filter is currently applied. Clicking this button displays all Date posted filter options."]').click();
+        await delay();
+        await page.locator('#f_TPR-3').click();
+        await delay();
+        await page.locator('button.filter__submit-button[data-tracking-control-name="public_jobs_f_TPR"]').click();
+    } catch (error) {
+        throw new Error('Error Setting Last 24 Hour Jobs:', error);
     }
+}
 
-    const text = 'new york';
-    for (const char of text) {
-        await page.type('input[aria-controls="job-search-bar-location-typeahead-list"]', char); // No delay here, we handle it ourselves
-        await delay(200, 500, 500); // Variable delay between characters
-    }
-    await delay();
-    await page.keyboard.press('Enter');
-
-
-
-
-    console.log('remote');
-    await delay();
-    await page.locator('button[aria-label="Remote filter. Clicking this button displays all Remote filter options."]').click();
-    await delay();
-    await page.locator('#f_WT-2').click();
-    await delay();
-    await page.locator('button.filter__submit-button[data-tracking-control-name="public_jobs_f_WT"]').click();
-
-
-    console.log('date');
-    await delay();
-    await page.locator('button[aria-label="Date posted filter. Any time filter is currently applied. Clicking this button displays all Date posted filter options."]').click();
-    await delay();
-    await page.locator('#f_TPR-3').click();
-    await delay();
-    await page.locator('button.filter__submit-button[data-tracking-control-name="public_jobs_f_TPR"]').click();
-
-
-    await delay(3000, 5000);
-
-    console.log('scraping...');
-    const items = await page.evaluate(() => {
-        const liElements = document.querySelectorAll('section.two-pane-serp-page__results-list > ul.jobs-search__results-list > li');
-        const result = Array.from(liElements).map(li => {
-            const card = li.querySelector('div.base-card');
-
-            return {
-                title: card?.querySelector('h3.base-search-card__title')?.textContent.trim() || 'N/A',
-                company: card?.querySelector('h4.base-search-card__subtitle a')?.textContent.trim() || 'N/A',
-                location: card?.querySelector('span.job-search-card__location')?.textContent.trim() || 'N/A',
-                datePosted: card?.querySelector('time.job-search-card__listdate--new')?.getAttribute('datetime') || 'N/A',
-                jobLink: card?.querySelector('a.base-card__full-link')?.href || 'N/A',
-                companyLogo: card?.querySelector('img.artdeco-entity-image')?.src || 'N/A'
-            };
+const getData = async (page) => {
+    console.log('Scraping');
+    try {
+        await delay(4000, 5000);
+        if (await !page.$('section.two-pane-serp-page__results-list > ul.jobs-search__results-list > li')) {
+            throw new Error('No Search Results Found');
+        }
+        const gotData = await page.evaluate(() => {
+            const liElements = document.querySelectorAll('section.two-pane-serp-page__results-list > ul.jobs-search__results-list > li');
+            const result = Array.from(liElements).map(li => {
+                const card = li.querySelector('div.base-card');
+                return {
+                    title: card?.querySelector('h3.base-search-card__title')?.textContent.trim() || 'N/A',
+                    company: card?.querySelector('h4.base-search-card__subtitle a')?.textContent.trim() || 'N/A',
+                    location: card?.querySelector('span.job-search-card__location')?.textContent.trim() || 'N/A',
+                    datePosted: card?.querySelector('time.job-search-card__listdate--new')?.getAttribute('datetime') || 'N/A',
+                    jobLink: card?.querySelector('a.base-card__full-link')?.href || 'N/A',
+                    companyLogo: card?.querySelector('img.artdeco-entity-image')?.src || 'N/A'
+                };
+            });
+            return result;
         });
-        return result;
-    });
-
-    console.log(items);
-
-
-
+        return gotData;
+    } catch (error) {
+        throw new Error('Error Getting Data:', error);
+    }
+}
 
 
+const startScraping = async (job, country) => {
+    let browser;
+    try {
+        const { page, browser } = await initializeBrowserAndPage();
+        await goToURL(page);
+        await acceptCookies(page);
+        await insertJob(page, job);
+        await insertCountry(page, country);
+        await setRemoteWork(page);
+        await setJobsLast24Hours(page);
+        const data = await getData(page);
+        console.log(data);
+        await delay(10000, 20000);
+        await browser.close();
+    } catch (error) {
+        console.error('Error Scraping: ', error);
+    }
+};
 
 
+startScraping('c++ developer', 'France')
 
-
-
-
-    await delay(100000, 200000); // Random delay between 1-2 seconds
-
-
-    // await browser.close();
-
-})();
 
 //? Old stuff
 
