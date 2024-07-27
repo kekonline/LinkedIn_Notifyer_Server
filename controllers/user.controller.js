@@ -88,76 +88,81 @@ exports.signIn = async (req, res, next) => {
 
 }
 
-exports.LogIn = async (req, res, next) => {
-    // const { email, password } = req.body;
-    // try {
-    //     const logingInParent = await Parent.findOne({ email });
-    //     if (logingInParent === null) {
-    //         res
-    //             .status(400)
-    //             .json({ errorMessage: "Email not registered", validLogin: false });
-    //         return;
-    //     }
+exports.logIn = async (req, res, next) => {
+    const { email, password } = req.body;
+    try {
+        const logingInUser = await User.findOne({ email });
+        if (logingInUser === null) {
+            res
+                .status(400)
+                .json({ errorMessage: "Email not registered", error: true });
+            return;
+        }
 
-    //     const isPasswordCorrect = await bcrypt.compare(
-    //         password,
-    //         logingInParent.password
-    //     );
+        // const isPasswordCorrect = await bcrypt.compare(
+        //     password,
+        //     logingInUser.password
+        // );
 
-    //     if (!isPasswordCorrect) {
-    //         res
-    //             .status(400)
-    //             .json({ errorMessage: "Incorrect password", validLogin: false });
-    //         return;
-    //     }
-    //     const logingInParentChilds = await Child.find({
-    //         parent: logingInParent._id,
-    //     }).select({ name: 1 });
+        const isPasswordCorrect = password === logingInUser.password;
 
-    //     const payload = {
-    //         _id: logingInParent._id,
-    //     };
-    //     const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
-    //         algorithm: "HS256",
-    //         expiresIn: "365d",
-    //     });
-    //     res.json({ authToken });
-    // } catch (error) {
-    //     next(error);
-    // }
+        if (!isPasswordCorrect) {
+            res
+                .status(400)
+                .json({ errorMessage: "Incorrect password", error: true });
+            return;
+        }
 
-}
 
-exports.verfiy = async (req, res, next) => {
-    //     res.json(req.payload);
-    // });
-
-    // //Post /auth/newPassword - password change request
-    // router.post("/newPassword", isAuthenticated, async (req, res, next) => {
-    //     // console.log("token", req.payload)
-    //     // console.log(req.body);
-    //     try {
-    //         const parentInfo = await Parent.findById(req.payload._id);
-    //         // console.log(parentInfo)
-    //         const isPasswordCorrect = await bcrypt.compare(
-    //             req.body.password,
-    //             parentInfo.password
-    //         );
-    //         if (isPasswordCorrect) {
-    //             // console.log("passwords are the same")
-    //             const salt = await bcrypt.genSalt(10);
-    //             const passwordHash = await bcrypt.hash(req.body.newPassword, salt);
-    //             const UpdateParentInfo = await Parent.findByIdAndUpdate(
-    //                 req.payload._id,
-    //                 { password: passwordHash },
-    //                 { new: true }
-    //             );
-    //             res.json({ passwordUpdated: true });
-    //         } else {
-    //             res.json({ passwordUpdated: false });
-    //         }
-    //     } catch (error) {
-    //         next(error);
-    //     }
+        const payload = {
+            _id: logingInUser._id,
+        };
+        const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
+            algorithm: "HS256",
+            expiresIn: "365d",
+        });
+        res.json({ authToken });
+    } catch (error) {
+        next(error);
+    }
 
 }
+
+exports.verify = async (req, res, next) => {
+    try {
+        res.json(req.payload);
+    } catch {
+        next(error)
+    }
+};
+
+//Post /auth/newPassword - password change request
+exports.newPassword = async (req, res, next) => {
+    // console.log("token", req.payload)
+    // console.log(req.body);
+    try {
+        const userInfo = await User.findById(req.payload._id);
+        // const isPasswordCorrect = await bcrypt.compare(
+        //     req.body.password,
+        //     parentInfo.password
+        // );
+        const isPasswordCorrect = password === logingInUser.password;
+
+        if (isPasswordCorrect) {
+            // console.log("passwords are the same")
+            // const salt = await bcrypt.genSalt(10);
+            // const passwordHash = await bcrypt.hash(req.body.newPassword, salt);
+            const UpdateUserInfo = await User.findByIdAndUpdate(
+                req.payload._id,
+                { password: req.body.newPassword },
+                { new: true }
+            );
+            res.json({ passwordUpdated: true });
+        } else {
+            res.json({ passwordUpdated: false });
+        }
+    } catch (error) {
+        next(error);
+    }
+};
+
