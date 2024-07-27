@@ -11,7 +11,7 @@ router.post("/login", userController.logIn);
 //GET /api/auth/verify - Validation Authorization
 router.get("/verify", authentication, userController.verify);
 
-//GET /api/auth/newpassword - Validation Authorization
+//POST /api/auth/newpassword - Validation Authorization
 router.post("/newpassword", authentication, userController.newPassword);
 
 module.exports = router;

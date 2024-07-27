@@ -27,14 +27,14 @@ const configureMiddleware = (app) => {
     app.use(cookieParser());
 };
 
+// ℹ️ Apply middleware
+configureMiddleware(app);
+
 // ℹ️ Import and use routes
 app.use("/api", indexRoutes);
 
 // ℹ️ Import and configure database
 require("./db");
-
-// ℹ️ Apply middleware
-configureMiddleware(app);
 
 // ℹ️ Import and use error handling middleware
 errorHandler(app);
