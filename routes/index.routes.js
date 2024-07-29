@@ -6,7 +6,7 @@ router.get("/", userController.getToken);
 
 // login, signin, verify
 const authRouter = require("./auth.routes")
-router.use("/auth", authentication, authRouter)
+router.use("/auth", authRouter)
 
 // searchTerm routes
 const searchTermRouter = require("./searchTerm.routes")

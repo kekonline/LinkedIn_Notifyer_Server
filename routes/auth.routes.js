@@ -3,10 +3,10 @@ const userController = require('../controllers/user.controller');
 const authentication = require("../middlewares/authentication.js");
 
 //POST /api/auth/signin - Registration
-router.post("/signin", userController.signIn);
+router.post("/signin", authentication, userController.signIn);
 
 //POST /api/auth/login - Authentication
-router.post("/login", userController.logIn);
+router.post("/login", authentication, userController.logIn);
 
 //GET /api/auth/verify - Validation Authorization
 router.get("/verify", authentication, userController.verify);

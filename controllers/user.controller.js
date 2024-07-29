@@ -39,10 +39,9 @@ exports.getToken = async (req, res, next) => {
 
 exports.signIn = async (req, res, next) => {
 
-    console.log(req.body);
-
     const { email, password } = req.body;
 
+    console.log("email, password", email, password);
     if (!email || !password) {
         res.status(400).json({ errorMessage: "All fields are required", error: true });
         // console.log(req.body);
@@ -56,6 +55,27 @@ exports.signIn = async (req, res, next) => {
                 .json({ errorMessage: "Email already registered", error: true });
             return;
         }
+
+        const authHeader = req.headers.authorization;
+
+        if (authHeader) {
+            const [tokenType, token] = authHeader.split(" ");
+
+            if (tokenType === "Bearer" && token) {
+
+                const userId = jwt.verify(token, process.env.TOKEN_SECRET);
+                isUserAlreadyRegistered = await User.findOne({ _id: userId });
+                if (isUserAlreadyRegistered.email) {
+                    res
+                        .status(400)
+                        .json({ errorMessage: "You already have an account", error: true });
+                    return;
+
+                }
+            }
+
+        }
+
 
         const regexPassword =
             /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{5,}$/gm;
@@ -116,6 +136,7 @@ exports.logIn = async (req, res, next) => {
             return;
         }
 
+        console.log("logingInUser._id," + logingInUser._id);
 
         const payload = {
             _id: logingInUser._id,
