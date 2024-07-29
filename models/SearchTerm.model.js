@@ -12,8 +12,7 @@ const searchTermSchema = new Schema(
         },
         jobType: {
             type: String,
-            enum: ['Remote', 'Hybrid', 'On-site'],
-            required: true
+            enum: ['Remote', 'Hybrid', 'On-site', ''],
         },
         users: [{
             type: Schema.Types.ObjectId,

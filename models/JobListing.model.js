@@ -4,19 +4,20 @@ const jobListingSchema = new Schema(
     {
         title: {
             type: String,
-            required: true
         },
         company: {
             type: String,
-            required: true
         },
         description: {
             type: String,
-            required: true
         },
-        applyLink: {
+        jobURL: {
             type: String,
-            required: true
+            required: true,
+            unique: true
+        },
+        applyURL: {
+            type: String,
         },
         searchTerms: [{
             type: Schema.Types.ObjectId,

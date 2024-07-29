@@ -11,9 +11,9 @@ exports.getToken = async (req, res, next) => {
         if (tokenType === "Bearer" && token) {
             try {
                 const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
-                return res.status(200).json({ message: "All Good User Is Authenticated" });
+                return res.status(200).json({ message: "All Good User Is Authenticated", error: false });
             } catch (err) {
-                return res.status(401).json({ errorMessage: "Token is invalid" });
+                return res.status(401).json({ message: "Token is invalid", error: true });
             }
         }
     }
@@ -39,11 +39,11 @@ exports.getToken = async (req, res, next) => {
 
 exports.signIn = async (req, res, next) => {
 
+
     const { email, password } = req.body;
 
-    console.log("email, password", email, password);
     if (!email || !password) {
-        res.status(400).json({ errorMessage: "All fields are required", error: true });
+        res.status(400).json({ message: "All fields are required", error: true });
         // console.log(req.body);
         return;
     }
@@ -52,58 +52,38 @@ exports.signIn = async (req, res, next) => {
         if (isEmailDuplicated) {
             res
                 .status(400)
-                .json({ errorMessage: "Email already registered", error: true });
+                .json({ message: "Email already registered", error: true });
             return;
         }
 
-        const authHeader = req.headers.authorization;
-
-        if (authHeader) {
-            const [tokenType, token] = authHeader.split(" ");
-
-            if (tokenType === "Bearer" && token) {
-
-                const userId = jwt.verify(token, process.env.TOKEN_SECRET);
-                isUserAlreadyRegistered = await User.findOne({ _id: userId });
-                if (isUserAlreadyRegistered.email) {
-                    res
-                        .status(400)
-                        .json({ errorMessage: "You already have an account", error: true });
-                    return;
-
-                }
-            }
-
+        let userId = req.payload._id;
+        isUserAlreadyRegistered = await User.findOne({ _id: userId });
+        if (isUserAlreadyRegistered.email) {
+            res
+                .status(400)
+                .json({ message: "You already have an account", error: true });
+            return;
         }
-
 
         const regexPassword =
             /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{5,}$/gm;
         if (regexPassword.test(password) === false) {
             res
                 .status(400)
-                .json({ errorMessage: "Password must be at least 5 characters long and contain at least one uppercase letter, one lowercase letter and one number", error: true });
+                .json({ message: "Password must be at least 5 characters long and contain at least one uppercase letter, one lowercase letter and one number", error: true });
             return;
         }
 
         // const salt = await bcrypt.genSalt(10);
         // const passwordHash = await bcrypt.hash(password, salt);
 
-        const newUser = await User.create({
-            email,
-            password
-        });
+        await User.findOneAndUpdate(
+            { _id: userId },
+            { $set: { email, password } }
+        );
 
+        res.status(201).json({ message: "User updated successfully", error: false });
 
-        const payload = {
-            _id: newUser._id,
-        };
-        const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
-            algorithm: "HS256",
-            expiresIn: "365d",
-        });
-
-        res.json({ authToken });
     } catch (error) {
         next(error);
         // console.log(error);
@@ -118,7 +98,7 @@ exports.logIn = async (req, res, next) => {
         if (logingInUser === null) {
             res
                 .status(400)
-                .json({ errorMessage: "Email not registered", error: true });
+                .json({ message: "Email not registered", error: true });
             return;
         }
 
@@ -132,7 +112,7 @@ exports.logIn = async (req, res, next) => {
         if (!isPasswordCorrect) {
             res
                 .status(400)
-                .json({ errorMessage: "Incorrect password", error: true });
+                .json({ message: "Incorrect password", error: true });
             return;
         }
 
@@ -181,9 +161,9 @@ exports.newPassword = async (req, res, next) => {
                 { password: req.body.newPassword },
                 { new: true }
             );
-            res.json({ passwordUpdated: true });
+            res.json({ message: "Password updated successfully", error: false });
         } else {
-            res.json({ passwordUpdated: false });
+            res.json({ message: "Incorrect password", error: true });
         }
     } catch (error) {
         next(error);
