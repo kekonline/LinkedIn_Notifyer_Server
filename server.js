@@ -1,5 +1,5 @@
 const app = require("./config/app");
-const startScraping = require("./scrapers/job");
+const { scrapeJobListing, scrapeJobDescription } = require("./scrapers/job");
 
 // ℹ️ Set the PORT and start the server
 const PORT = process.env.PORT || 5005;
@@ -11,9 +11,12 @@ app.listen(PORT, () => {
     );
 
 
-    console.log("start scraping");
+    // console.log("start scraping");
 
-    startScraping('c++ developer', 'France', '66a7e6eba84a1bbedfe42908')
+    // scrapeJobListing('c++ developer', 'France', '66a7e6eba84a1bbedfe42908')
+
+    scrapeJobDescription()
+
 });
 
 
