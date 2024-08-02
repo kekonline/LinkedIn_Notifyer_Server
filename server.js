@@ -13,9 +13,9 @@ app.listen(PORT, () => {
 
     // console.log("start scraping");
 
-    // scrapeJobListing('c++ developer', 'France', '66a7e6eba84a1bbedfe42908')
+    scrapeJobListing()
 
-    scrapeJobDescription()
+    // scrapeJobDescription()
 
 });
 

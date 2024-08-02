@@ -1,6 +1,3 @@
-const JobListing = require("../models/JobListing.model")
-
-
 // Handler for fetching a list of users
 exports.getAllJobs = async (req, res, next) => {
     try {

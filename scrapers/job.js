@@ -1,6 +1,8 @@
+require("dotenv").config();
 const puppeteer = require('puppeteer-extra');
 const stealthPlugin = require('puppeteer-extra-plugin-stealth');
 const JobListing = require('../models/JobListing.model');
+const SearchTerm = require('../models/SearchTerm.model');
 
 const delay = async (min = 3000, max = 4000, randomIncrease = 0) => {
     if (randomIncrease) {
@@ -269,7 +271,7 @@ const getJobListingsWithNoDescription = async () => {
                 { description: "" }
             ]
         })
-            .limit(2);
+            .limit(10);
         return jobListings;
     } catch (error) {
         console.error("Error fetching job listings with no description:", error);
@@ -277,28 +279,53 @@ const getJobListingsWithNoDescription = async () => {
     }
 };
 
+const getJobSearchTermsToScrape = async () => {
+    try {
+        const timeAgo = new Date(Date.now() - process.env.TIME_AGO * 60 * 1000);
 
-const scrapeJobListing = async (job, country, searchTermId) => {
-    let browser;
+        return SearchTerm.find({
+            $or: [
+                { lastScraped: { $exists: false } },
+                { lastScraped: { $lte: timeAgo } }
+            ]
+        })
+            .sort({ lastScraped: 1 })
+            .limit(10);
+    } catch (error) {
+        console.error("Error fetching job listings: ", error);
+        throw error;
+    }
+};
+
+
+const scrapeJobListing = async () => {
+
+    // job, country, searchTermId
+    // let browser;
     try {
         const { page, browser } = await initializeBrowserAndPage();
-        await goToURL(page, 'https://www.linkedin.com/jobs/search');
-        await acceptCookies(page);
-        await insertJob(page, job);
-        await insertCountry(page, country);
-        await setRemoteWork(page);
-        await setJobsLast24Hours(page);
-        const data = await getJobListingData(page);
-        await saveToDBJobListing(data, searchTermId);
-        await delay(10000, 20000);
-        await browser.close();
+        let searchTermsToScrape = await getJobSearchTermsToScrape();
+        let allJobsScraped = [];
+
+        do {
+            // await goToURL(page, 'https://www.linkedin.com/jobs/search');
+            // await acceptCookies(page);
+            // await insertJob(page, job);
+            // await insertCountry(page, country);
+            // await setRemoteWork(page);
+            // await setJobsLast24Hours(page);
+            // const data = await getJobListingData(page);
+            // await saveToDBJobListing(data, searchTermId);
+        } while (jobsToScrapeDescription);
+        // await delay(10000, 20000);
+        // await browser.close();
     } catch (error) {
         console.error('Error Scraping Listing: ', error);
     }
 };
 
-const scrapeJobDescription = async (job, country, searchTermId) => {
-    let browser;
+const scrapeJobDescription = async () => {
+    // let browser;
     try {
         const { page, browser } = await initializeBrowserAndPage();
         let jobsToScrapeDescription = await getJobListingsWithNoDescription();

@@ -1,4 +1,4 @@
-const SearchTerm = require('../models/searchterm.model');
+const SearchTerm = require('../models/SearchTerm.model');
 
 exports.getSearchTerm = async (req, res, next) => {
     const userId = req.payload._id;
