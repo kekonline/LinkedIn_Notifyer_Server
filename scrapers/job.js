@@ -136,20 +136,20 @@ const insertCountry = async (page, country) => {
 
 }
 
-const setRemoteWork = async (page) => {
+const setRemoteWork = async (page, jobType) => {
     try {
-        console.log('Set Remote Work');
+        console.log(`Set ${jobType} Work`);
         await delay(4000, 5000);
-        if (await !page.$('button[aria-label="Remote filter. Clicking this button displays all Remote filter options."]')) {
+        if (await !page.$(`button[aria-label="${jobType} filter. Clicking this button displays all ${jobType} filter options."]`)) {
             throw new Error('No Work Type Button Found');
         }
-        await page.locator('button[aria-label="Remote filter. Clicking this button displays all Remote filter options."]').click();
+        await page.locator(`button[aria-label="${jobType} filter. Clicking this button displays all ${jobType} filter options."]`).click();
         await delay();
         await page.locator('#f_WT-2').click();
         await delay();
         await page.locator('button.filter__submit-button[data-tracking-control-name="public_jobs_f_WT"]').click();
     } catch (error) {
-        throw new Error('Error Setting Remote Work:', error);
+        throw new Error(`Error Setting ${jobType} Work:`, error);
     }
 }
 
@@ -192,6 +192,7 @@ const getJobListingData = async (page) => {
             });
             return result;
         });
+        console.log('Scraping Job Listing Done Got: ', gotData && gotData.length ? gotData.length : 0);
         return gotData;
     } catch (error) {
         throw new Error('Error Getting Data:', error);
@@ -218,9 +219,8 @@ const getJobDescriptionData = async (page) => {
     }
 }
 
-
-const saveToDBJobListing = async (data, searchTermId) => {
-    const dataForDB = data.map(jobListing => {
+const saveToDBJobListing = async (scrapedJobListings, searchTermId) => {
+    const joblListingsForDB = scrapedJobListings.map(jobListing => {
         const { title, company, location, jobURL } = jobListing;
         return {
             updateOne: {
@@ -240,7 +240,34 @@ const saveToDBJobListing = async (data, searchTermId) => {
             }
         };
     });
-    const result = await JobListing.bulkWrite(dataForDB);
+    const result = await JobListing.bulkWrite(joblListingsForDB);
+    console.log(`Saved To DB Job Listing: ${result}`);
+    return result;
+}
+
+const updateJobSearchTermsToScrape = async (scrapedJobListings, searchTermId) => {
+    const jobListingIds = Object.values(scrapedJobListings.upsertedIds);
+
+    if (jobListingIds && jobListingIds.length === 0) {
+        return;
+    }
+
+    try {
+        await SearchTerm.updateOne(
+            { _id: searchTermId }, // Filter by _id
+            {
+                $addToSet: { jobListings: { $each: jobListingIds } }, // Add job listing IDs to the array, ensuring no duplicates
+                $set: { lastScraped: new Date() }
+            }
+        );
+        console.log(`Updated Job Search Terms To Scrape: ${jobListingIds.length}`);
+
+    } catch (error) {
+        console.error("Error updating search terms: ", error);
+        throw error;
+    }
+
+
 }
 
 
@@ -280,6 +307,7 @@ const getJobListingsWithNoDescription = async () => {
 };
 
 const getJobSearchTermsToScrape = async () => {
+    console.log('Fetching Job Search Terms To Scrape');
     try {
         const timeAgo = new Date(Date.now() - process.env.TIME_AGO * 60 * 1000);
 
@@ -290,7 +318,7 @@ const getJobSearchTermsToScrape = async () => {
             ]
         })
             .sort({ lastScraped: 1 })
-            .limit(10);
+            .limit(1);
     } catch (error) {
         console.error("Error fetching job listings: ", error);
         throw error;
@@ -300,23 +328,37 @@ const getJobSearchTermsToScrape = async () => {
 
 const scrapeJobListing = async () => {
 
-    // job, country, searchTermId
-    // let browser;
+    // reference job, country, searchTermId
+    // no need let browser;
     try {
         const { page, browser } = await initializeBrowserAndPage();
+
         let searchTermsToScrape = await getJobSearchTermsToScrape();
-        let allJobsScraped = [];
+
+        if (!searchTermsToScrape || searchTermsToScrape.length === 0) {
+            console.log('No Job Search Terms To Scrape');
+            return;
+        }
+        let { _id: searchTermId, term, location, jobType } = searchTermsToScrape[0];
 
         do {
-            // await goToURL(page, 'https://www.linkedin.com/jobs/search');
+            await goToURL(page, 'https://www.linkedin.com/jobs/search');
             // await acceptCookies(page);
-            // await insertJob(page, job);
-            // await insertCountry(page, country);
-            // await setRemoteWork(page);
+            // await insertJob(page, term);
+            // await insertCountry(page, location);
+            // await setRemoteWork(page, jobType);
             // await setJobsLast24Hours(page);
-            // const data = await getJobListingData(page);
-            // await saveToDBJobListing(data, searchTermId);
-        } while (jobsToScrapeDescription);
+            const scrapedJobListings = await getJobListingData(page);
+            const savedJobListings = await saveToDBJobListing(scrapedJobListings, searchTermId);
+            await updateJobSearchTermsToScrape(savedJobListings, searchTermId);
+            searchTermsToScrape = await getJobSearchTermsToScrape();
+            if (searchTermsToScrape && searchTermsToScrape.length > 0) {
+                ({ _id: searchTermId, term, location, jobType } = searchTermsToScrape[0]);
+            }
+
+
+        } while (searchTermsToScrape);
+
         // await delay(10000, 20000);
         // await browser.close();
     } catch (error) {
