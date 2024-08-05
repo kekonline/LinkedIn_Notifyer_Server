@@ -140,14 +140,19 @@ const setRemoteWork = async (page, jobType) => {
     try {
         console.log(`Set ${jobType} Work`);
         await delay(4000, 5000);
-        if (await !page.$(`button[aria-label="${jobType} filter. Clicking this button displays all ${jobType} filter options."]`)) {
+        if (await !page.$('button[aria-label="Remote filter. Clicking this button displays all Remote filter options."]')) {
             throw new Error('No Work Type Button Found');
         }
-        await page.locator(`button[aria-label="${jobType} filter. Clicking this button displays all ${jobType} filter options."]`).click();
+        await page.locator('button[aria-label="Remote filter. Clicking this button displays all Remote filter options."]').click();
         await delay();
+        if (await !page.$('input#f_WT-2')) {
+            console.log('No Remote Work Found');
+            return false
+        }
         await page.locator('#f_WT-2').click();
         await delay();
         await page.locator('button.filter__submit-button[data-tracking-control-name="public_jobs_f_WT"]').click();
+        return true
     } catch (error) {
         throw new Error(`Error Setting ${jobType} Work:`, error);
     }
@@ -162,9 +167,14 @@ const setJobsLast24Hours = async (page) => {
         }
         await page.locator('button[aria-label="Date posted filter. Any time filter is currently applied. Clicking this button displays all Date posted filter options."]').click();
         await delay();
+        if (await !page.$('input#f_TPR-3')) {
+            console.log('Jobs In Last 24 Hours Found');
+            return false
+        }
         await page.locator('#f_TPR-3').click();
         await delay();
         await page.locator('button.filter__submit-button[data-tracking-control-name="public_jobs_f_TPR"]').click();
+        return true
     } catch (error) {
         throw new Error('Error Setting Last 24 Hour Jobs:', error);
     }
@@ -246,10 +256,10 @@ const saveToDBJobListing = async (scrapedJobListings, searchTermId) => {
 }
 
 const updateJobSearchTermsToScrape = async (scrapedJobListings, searchTermId) => {
-    const jobListingIds = Object.values(scrapedJobListings.upsertedIds);
+    let jobListingIds = []
 
-    if (jobListingIds && jobListingIds.length === 0) {
-        return;
+    if (scrapedJobListings && scrapedJobListings.length > 0) {
+        jobListingIds = Object.values(scrapedJobListings.upsertedIds);
     }
 
     try {
@@ -328,8 +338,6 @@ const getJobSearchTermsToScrape = async () => {
 
 const scrapeJobListing = async () => {
 
-    // reference job, country, searchTermId
-    // no need let browser;
     try {
         const { page, browser } = await initializeBrowserAndPage();
 
@@ -337,40 +345,52 @@ const scrapeJobListing = async () => {
 
         if (!searchTermsToScrape || searchTermsToScrape.length === 0) {
             console.log('No Job Search Terms To Scrape');
+            await browser.close();
             return;
         }
-        let { _id: searchTermId, term, location, jobType } = searchTermsToScrape[0];
 
+        let { _id: searchTermId, term, location, jobType } = searchTermsToScrape[0];
         do {
+            let haveData = true;
             await goToURL(page, 'https://www.linkedin.com/jobs/search');
-            // await acceptCookies(page);
-            // await insertJob(page, term);
-            // await insertCountry(page, location);
-            // await setRemoteWork(page, jobType);
-            // await setJobsLast24Hours(page);
-            const scrapedJobListings = await getJobListingData(page);
-            const savedJobListings = await saveToDBJobListing(scrapedJobListings, searchTermId);
-            await updateJobSearchTermsToScrape(savedJobListings, searchTermId);
+            await acceptCookies(page);
+            await insertJob(page, term);
+            await insertCountry(page, location);
+            haveData = await setRemoteWork(page, jobType);
+            haveData = await setJobsLast24Hours(page);
+            if (haveData) {
+                const scrapedJobListings = await getJobListingData(page);
+                const savedJobListings = await saveToDBJobListing(scrapedJobListings, searchTermId);
+                await updateJobSearchTermsToScrape(savedJobListings, searchTermId);
+            } else {
+                await updateJobSearchTermsToScrape([], searchTermId);
+            }
+
             searchTermsToScrape = await getJobSearchTermsToScrape();
             if (searchTermsToScrape && searchTermsToScrape.length > 0) {
                 ({ _id: searchTermId, term, location, jobType } = searchTermsToScrape[0]);
             }
-
-
         } while (searchTermsToScrape);
 
-        // await delay(10000, 20000);
-        // await browser.close();
+        await delay(10000, 20000);
+        await browser.close();
     } catch (error) {
         console.error('Error Scraping Listing: ', error);
     }
 };
 
 const scrapeJobDescription = async () => {
-    // let browser;
+
     try {
         const { page, browser } = await initializeBrowserAndPage();
         let jobsToScrapeDescription = await getJobListingsWithNoDescription();
+
+        if (!jobsToScrapeDescription || jobsToScrapeDescription.length === 0) {
+            console.log('No Job Descriptions To Scrape');
+            await browser.close();
+            return;
+        }
+
         let allDescriptions = [];
 
         do {
@@ -395,6 +415,10 @@ const scrapeJobDescription = async () => {
     } catch (error) {
         console.error('Error Scraping Description: ', error);
     }
+};
+
+module.exports = {
+    scrapeJobListing, scrapeJobDescription
 };
 
 //? Old stuff
@@ -453,7 +477,6 @@ const scrapeJobDescription = async () => {
 //         await button.click();
 //     }
 // }
-
 
 
 
@@ -519,8 +542,3 @@ const scrapeJobDescription = async () => {
 // };
 
 // await page.keyboard.type(char, { delay: randomDelay(50, 150) }); // Random delay between 50ms and 150ms
-
-
-module.exports = {
-    scrapeJobListing, scrapeJobDescription
-};
