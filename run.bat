@@ -1,3 +1,3 @@
-
-code .
+@echo off
+start code .
 exit

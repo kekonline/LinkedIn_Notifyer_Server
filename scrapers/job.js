@@ -20,6 +20,8 @@ const initializeBrowserAndPage = async () => {
         const browser = await puppeteer.launch({
             headless: false, // Set to false to see the browser in action
             args: [
+                `--window-size=430,932`,
+                `--window-position=1025,0`,
                 `--no-sandbox`,
                 `--disable-setuid-sandbox`,
                 `--proxy-server=${process.env.PROXY1}`,
@@ -53,32 +55,37 @@ const initializeBrowserAndPage = async () => {
 
 const goToURL = async (page, url) => {
     console.log('Navigating To URL:', url);
-    try {
-        await page.goto(url, {
-            waitUntil: 'networkidle2', // Wait until the network is idle
-        });
-        await delay();
-        const currentURL = await page.url();
+    const maxRetries = 3;
+    let retries = 0;
 
-        if (!currentURL.includes(url)) {
-            await delay(5000, 8000);
+    while (retries < maxRetries) {
+        try {
             await page.goto(url, {
                 waitUntil: 'networkidle2', // Wait until the network is idle
             });
-        }
+            await delay(5000, 8000);
 
-        if (currentURL.includes(url)) {
-            console.log('URL Loaded');
-            return false;
-        } else {
-            console.log('Failed To Load URL');
-            return true;
+            const currentURL = await page.url();
+
+            if (currentURL.includes(url)) {
+                console.log('URL Loaded');
+                return false;
+            } else {
+                console.log('Failed To Load URL, Retrying...');
+            }
+
+            retries++;
+        } catch (error) {
+            console.log('Error Navigating To URL, Retrying...', error);
+            retries++;
+            await delay(5000, 8000);
         }
     }
-    catch (error) {
-        throw new Error('Error Navigating To URL:', error);
-    }
-}
+
+    console.log('Failed To Load URL After 3 Attempts');
+    return true;
+};
+
 
 const acceptCookies = async (page) => {
     console.log('Checking for Cookie Button:');
@@ -202,7 +209,8 @@ const getJobListingData = async (page) => {
     try {
         await delay(4000, 5000);
         if (!(await page.$('section.two-pane-serp-page__results-list > ul.jobs-search__results-list > li'))) {
-            throw new Error('No Search Results Found');
+            console.log('No Search Results Found');
+            return []
         }
         const gotData = await page.evaluate(() => {
             const liElements = document.querySelectorAll('section.two-pane-serp-page__results-list > ul.jobs-search__results-list > li');
@@ -354,43 +362,53 @@ const getJobSearchTermsToScrape = async () => {
 
 
 const scrapeJobListing = async () => {
-
     try {
-
         let searchTermsToScrape = await getJobSearchTermsToScrape();
         if (!searchTermsToScrape || searchTermsToScrape.length === 0) {
             console.log('No Job Search Terms To Scrape');
             return;
         }
 
+        while (searchTermsToScrape && searchTermsToScrape.length > 0) {
+            let retries = 0;
+            let scraperFailed = false;
+            let dataAvailable = true;
+            let { _id: searchTermId, term, location, jobType } = searchTermsToScrape[0];
 
-        do {
             do {
-                let retries = 0;
-                let scraperFailed = false;
-                let dataAvailable = true;
-                const { page, browser } = await initializeBrowserAndPage();
-                let { _id: searchTermId, term, location, jobType } = searchTermsToScrape[0];
+                try {
+                    const { page, browser } = await initializeBrowserAndPage();
+                    scraperFailed = await goToURL(page, 'https://www.linkedin.com/jobs/search');
+                    if (!scraperFailed) scraperFailed = await acceptCookies(page);
+                    if (!scraperFailed) scraperFailed = await insertJob(page, term);
+                    if (!scraperFailed) scraperFailed = await insertCountry(page, location);
+                    if (!scraperFailed) [scraperFailed, dataAvailable] = await setRemoteWork(page, jobType);
+                    if (!scraperFailed && dataAvailable) [scraperFailed, dataAvailable] = await setJobsLast24Hours(page);
 
-                scraperFailed = await goToURL(page, 'https://www.linkedin.com/jobs/search');
-                !scraperFailed ? await acceptCookies(page) : null;
-                // !scraperFailed ? scraperFailed = await insertJob(page, term) : null;
-                !scraperFailed ? scraperFailed = await insertCountry(page, location) : null;
-                !scraperFailed ? [scraperFailed, dataAvailable] = await setRemoteWork(page, jobType) : null;
-                !scraperFailed && dataAvailable ? [scraperFailed, dataAvailable] = await setJobsLast24Hours(page) : null;
-                // if (dataAvailable === true) {
-                //     const scrapedJobListings = await getJobListingData(page);
-                //     const savedJobListings = await saveToDBJobListing(scrapedJobListings, searchTermId);
-                //     await updateJobSearchTermsToScrape(savedJobListings, searchTermId);
-                // } else if (dataAvailable === false) {
-                //     await updateJobSearchTermsToScrape([], searchTermId);
-                // }
-                await browser.close();
+                    if (dataAvailable && !scraperFailed) {
+                        const scrapedJobListings = await getJobListingData(page);
+                        if (scrapedJobListings) {
+                            const savedJobListings = await saveToDBJobListing(scrapedJobListings, searchTermId);
+                            await updateJobSearchTermsToScrape(savedJobListings, searchTermId);
+                        } else {
+                            scraperFailed = true;
+                        }
+                    } else if (!dataAvailable && !scraperFailed) {
+                        await updateJobSearchTermsToScrape([], searchTermId);
+                    }
+
+                    await browser.close();
+                } catch (innerError) {
+                    console.error('Inner error during scraping: ', innerError);
+                    scraperFailed = true;
+                }
+
+                retries++;
                 await delay(10000, 20000);
-            } while (retries < 3 || scraperFailed);
-            searchTermsToScrape = await getJobSearchTermsToScrape();
+            } while (retries < 3 && scraperFailed);
 
-        } while (searchTermsToScrape);
+            searchTermsToScrape = await getJobSearchTermsToScrape();
+        }
 
     } catch (error) {
         console.error('Error Scraping Listing: ', error);
