@@ -238,8 +238,9 @@ const getJobDescriptionData = async (page) => {
     console.log('Scraping Description');
     try {
         await delay(4000, 5000);
-        if (!(await page.$('div.show-more-less-html__markup relative'))) {
-            throw new Error('No Search Results Found');
+        if (!(await page.$('div.show-more-less-html__markup'))) {
+            console.log('No Description Results Found');
+            return [true, null]
         }
         const gotData = await page.evaluate(() => {
 
@@ -248,7 +249,7 @@ const getJobDescriptionData = async (page) => {
             };
 
         });
-        return gotData;
+        return [false, gotData];
     } catch (error) {
         throw new Error('Error Getting Data:', error);
     }
@@ -415,43 +416,91 @@ const scrapeJobListing = async () => {
     }
 };
 
-const scrapeJobDescription = async () => {
+// const scrapeJobDescription = async () => {
 
+//     try {
+//         const { page, browser } = await initializeBrowserAndPage();
+//         let jobsToScrapeDescription = await getJobListingsWithNoDescription();
+
+//         if (!jobsToScrapeDescription || jobsToScrapeDescription.length === 0) {
+//             console.log('No Job Descriptions To Scrape');
+//             await browser.close();
+//             return;
+//         }
+
+//         let allDescriptions = [];
+
+//         do {
+//             for await (const jobListing of jobsToScrapeDescription) {
+
+//                 await goToURL(page, jobListing.jobURL);
+//                 await acceptCookies(page);
+//                 const gotDescription = await getJobDescriptionData(page);
+//                 allDescriptions.push({ _id: jobListing._id, description: gotDescription.description });
+
+//                 await delay(10000, 20000);
+//             }
+//             await saveToDBJobDescription(allDescriptions);
+//             jobsToScrapeDescription = await getJobListingsWithNoDescription();
+//             allDescriptions = [];
+
+
+//         } while (jobsToScrapeDescription);
+
+//         await delay(10000, 20000);
+//         await browser.close();
+//     } catch (error) {
+//         console.error('Error Scraping Description: ', error);
+//     }
+// };
+
+const scrapeJobDescription = async () => {
     try {
-        const { page, browser } = await initializeBrowserAndPage();
         let jobsToScrapeDescription = await getJobListingsWithNoDescription();
 
         if (!jobsToScrapeDescription || jobsToScrapeDescription.length === 0) {
             console.log('No Job Descriptions To Scrape');
-            await browser.close();
             return;
         }
 
-        let allDescriptions = [];
-
-        do {
+        while (jobsToScrapeDescription.length > 0) {
+            let allDescriptions = [];
             for await (const jobListing of jobsToScrapeDescription) {
 
-                await goToURL(page, jobListing.jobURL);
-                await acceptCookies(page);
-                const gotDescription = await getJobDescriptionData(page);
-                allDescriptions.push({ _id: jobListing._id, description: gotDescription.description });
-
-                await delay(10000, 20000);
+                try {
+                    const { page, browser } = await initializeBrowserAndPage();
+                    let scraperFailed = await goToURL(page, jobListing.jobURL);
+                    if (!scraperFailed) scraperFailed = await acceptCookies(page);
+                    if (!scraperFailed) {
+                        const [error, gotDescription] = await getJobDescriptionData(page);
+                        scraperFailed = error;
+                        if (!scraperFailed) {
+                            allDescriptions.push({ _id: jobListing._id, description: gotDescription.description });
+                        }
+                    }
+                    await browser.close();
+                    await delay(10000, 20000);
+                } catch (innerError) {
+                    console.error(`Inner error during scraping job description ${jobListing._id}: `, innerError);
+                    if (page) await page.close();
+                    if (browser) await browser.close();
+                }
             }
-            await saveToDBJobDescription(allDescriptions);
-            jobsToScrapeDescription = await getJobListingsWithNoDescription();
-            allDescriptions = [];
 
+            try {
+                await saveToDBJobDescription(allDescriptions);
+                jobsToScrapeDescription = await getJobListingsWithNoDescription();
+            } catch (saveError) {
+                console.error('Error saving job descriptions: ', saveError);
+            }
+        }
 
-        } while (jobsToScrapeDescription);
-
-        await delay(10000, 20000);
-        await browser.close();
     } catch (error) {
         console.error('Error Scraping Description: ', error);
     }
 };
+
+
 
 module.exports = {
     scrapeJobListing, scrapeJobDescription

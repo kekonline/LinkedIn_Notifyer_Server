@@ -20,6 +20,7 @@ app.listen(PORT, () => {
 
 // setInterval(startScraping, 60000);
 
-startScraping()
+// startScraping()
+scrapeJobDescription()
 
 //check erorr in next and middleware
