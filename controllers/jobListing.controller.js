@@ -1,20 +1,41 @@
-// Handler for fetching a list of users
+const JobListing = require('../models/JobListing.model');
+const SearchTerm = require('../models/SearchTerm.model');
+
 exports.getAllJobs = async (req, res, next) => {
+    const userId = req.payload._id;
+
     try {
-        const users = await User.find(); // Retrieve users from the database
-        res.status(200).json(users); // Send users as JSON response
+        const searchTerms = await SearchTerm.find({ users: userId })
+            .populate({
+                path: 'jobListings',
+                select: '-users'
+            });
+
+        const jobListings = searchTerms.flatMap(term => term.jobListings);
+        res.status(200).json(jobListings); // Send job listings as JSON response
     } catch (error) {
-        res.status(500).json({ error: 'An error occurred while fetching users' });
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while fetching job listings' });
     }
 };
 
-// Handler for creating a new user
+
+// Handler for creating a new job listing
 exports.getJobById = async (req, res, next) => {
+    const jobId = req.params.jobId; // Get the jobId from the URL parameters
+
     try {
-        const newUser = new User(req.body); // Create a new user instance
-        await newUser.save(); // Save user to the database
-        res.status(201).json(newUser); // Send the created user as JSON response
+        // Find the job listing by its ID
+        const jobListing = await JobListing.findById(jobId).select('-users');
+
+        if (!jobListing) {
+            return res.status(404).json({ error: 'Job listing not found' });
+        }
+
+        console.log(jobListing); // Log the job listing to the console
+        res.status(200).json(jobListing); // Send the job listing as a JSON response
     } catch (error) {
-        res.status(500).json({ error: 'An error occurred while creating the user' });
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while fetching the job listing' });
     }
 };
