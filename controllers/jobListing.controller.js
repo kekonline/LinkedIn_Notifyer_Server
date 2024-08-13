@@ -12,7 +12,7 @@ exports.getAllJobs = async (req, res, next) => {
             });
 
         const jobListings = searchTerms.flatMap(term => term.jobListings);
-        res.status(200).json(jobListings); // Send job listings as JSON response
+        res.status(200).json(jobListings);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while fetching job listings' });
@@ -22,18 +22,16 @@ exports.getAllJobs = async (req, res, next) => {
 
 // Handler for creating a new job listing
 exports.getJobById = async (req, res, next) => {
-    const jobId = req.params.jobId; // Get the jobId from the URL parameters
+    const jobId = req.params.jobId;
 
     try {
-        // Find the job listing by its ID
         const jobListing = await JobListing.findById(jobId).select('-users');
 
         if (!jobListing) {
             return res.status(404).json({ error: 'Job listing not found' });
         }
-
-        console.log(jobListing); // Log the job listing to the console
-        res.status(200).json(jobListing); // Send the job listing as a JSON response
+        console.log(jobListing);
+        res.status(200).json(jobListing);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while fetching the job listing' });

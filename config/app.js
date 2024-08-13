@@ -15,7 +15,7 @@ const configureMiddleware = (app) => {
     app.set("trust proxy", 1);
 
     // CORS configuration
-    const FRONTEND_URL = process.env.ORIGIN || "http://localhost:3000";
+    const FRONTEND_URL = process.env.ORIGIN || "http://localhost:5173";
     app.use(cors({ origin: [FRONTEND_URL] }));
 
     // Logging middleware
