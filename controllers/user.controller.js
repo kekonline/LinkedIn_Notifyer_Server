@@ -134,6 +134,7 @@ exports.logIn = async (req, res, next) => {
 
 exports.verify = async (req, res, next) => {
     try {
+        console.log("req.payload", req.payload);
         res.json(req.payload);
     } catch {
         next(error)

@@ -2,7 +2,7 @@ const router = require("express").Router();
 const authentication = require("../middlewares/authentication.js");
 const userController = require('../controllers/user.controller');
 
-router.get("/getToken", userController.getToken);
+router.get("/gettoken", userController.getToken);
 
 // login, signin, verify
 const authRouter = require("./auth.routes")
