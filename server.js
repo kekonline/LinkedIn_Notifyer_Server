@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 5005;
 const startScraping = async () => {
 
     console.log("start scraping");
-    await scrapeJobListing()
+    // await scrapeJobListing()
     await scrapeJobDescription()
 
 }
@@ -20,6 +20,6 @@ app.listen(PORT, () => {
 
 // setInterval(startScraping, 60000);
 
-
+startScraping()
 
 //check erorr in next and middleware

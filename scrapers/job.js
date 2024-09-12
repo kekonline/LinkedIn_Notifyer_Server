@@ -41,14 +41,15 @@ const initializeBrowserAndPage = async () => {
             delete navigator.__proto__.webdriver;
         });
 
-        // If your proxy requires authentication, you can set it like this:
-        // await page.authenticate({
-        //     username: 'your-proxy-username', // Replace with your proxy username
-        //     password: 'your-proxy-password', // Replace with your proxy password
-        // });
+        await page.authenticate({
+            username: process.env.PROXYUSER,
+            password: process.env.PROXYPASS,
+        });
 
         return { page, browser };
     } catch (error) {
+
+        console.error('Error Initializing Browser And Page:', error);
         throw new Error('Error Initializing Browser And Page:', error);
     }
 }
@@ -330,8 +331,7 @@ const getJobListingsWithNoDescription = async () => {
         const jobListings = await JobListing.find({
             $or: [
                 { description: { $exists: false } },
-                { description: null },
-                { description: "" }
+
             ]
         })
             .limit(10);

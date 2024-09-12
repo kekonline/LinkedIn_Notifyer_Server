@@ -10,7 +10,7 @@ exports.getAllJobs = async (req, res, next) => {
                 path: 'jobListings',
                 select: '-users'
             });
-
+        console.log("searchTerms", searchTerms)
         const jobListings = searchTerms.flatMap(term => term.jobListings);
         res.status(200).json(jobListings);
     } catch (error) {
