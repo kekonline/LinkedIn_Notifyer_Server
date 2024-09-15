@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 5005;
 const startScraping = async () => {
 
     console.log("start scraping");
-    // await scrapeJobListing()
+    await scrapeJobListing()
     await scrapeJobDescription()
 
 }

@@ -259,7 +259,7 @@ const getJobDescriptionData = async (page) => {
 const saveToDBJobListing = async (scrapedJobListings, searchTermId) => {
     const joblListingsForDB = scrapedJobListings.map(jobListing => {
         const { title, company, location, jobURL } = jobListing;
-        const simplifiedURL = jobURL.split('?')[0] + '/';
+        const simplifiedURL = jobURL ? jobURL.split('?')[0] + '/' : null;
         return {
             updateOne: {
                 filter: { jobURL: simplifiedURL },
