@@ -1,4 +1,5 @@
 require("dotenv").config();
+const axios = require('axios');
 const puppeteer = require('puppeteer-extra');
 const stealthPlugin = require('puppeteer-extra-plugin-stealth');
 const JobListing = require('../models/JobListing.model');
@@ -12,6 +13,15 @@ const delay = async (min = 3000, max = 4000, randomIncrease = 0) => {
     const time = Math.random() * (max - min) + min;
     return new Promise(async (resolve) => setTimeout(resolve, time));
 };
+
+const getPublicIP = async () => {
+    try {
+        const response = await axios.get('https://api.ipify.org?format=json');
+        console.log('Your public IP address is:', response.data.ip);
+    } catch (error) {
+        console.error('Error fetching public IP:', error);
+    }
+}
 
 const initializeBrowserAndPage = async () => {
 
@@ -45,6 +55,8 @@ const initializeBrowserAndPage = async () => {
             username: process.env.PROXYUSER,
             password: process.env.PROXYPASS,
         });
+
+        getPublicIP();
 
         return { page, browser };
     } catch (error) {
@@ -259,7 +271,10 @@ const getJobDescriptionData = async (page) => {
 const saveToDBJobListing = async (scrapedJobListings, searchTermId) => {
     const joblListingsForDB = scrapedJobListings.map(jobListing => {
         const { title, company, location, jobURL } = jobListing;
-        const simplifiedURL = jobURL ? jobURL.split('?')[0] + '/' : null;
+
+        if (!jobURL) return;
+
+        const simplifiedURL = jobURL.split('?')[0] + '/';
         return {
             updateOne: {
                 filter: { jobURL: simplifiedURL },
@@ -268,7 +283,7 @@ const saveToDBJobListing = async (scrapedJobListings, searchTermId) => {
                         title,
                         company,
                         location,
-                        jobURL
+                        jobURL: simplifiedURL
                     },
                     $addToSet: {
                         searchTerms: searchTermId
@@ -317,7 +332,7 @@ const saveToDBJobDescription = async (data) => {
                 filter: { _id: _id },
                 update: {
                     $set: {
-                        description
+                        description: Buffer.from(description, 'utf-8').toString('utf-8')
                     }
                 },
                 upsert: true
