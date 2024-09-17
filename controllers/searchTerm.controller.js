@@ -21,7 +21,7 @@ exports.createSearchTerm = async (req, res, next) => {
     }
 
     try {
-        serchTermExists = await SearchTerm.findOne({ term: term.trim().toLowerCase(), location: location.trim().toLowerCase(), jobType: jobType ? jobType.trim().toLowerCase() : jobType });
+        // serchTermExists = await SearchTerm.findOne({ term: term.trim().toLowerCase(), location: location.trim().toLowerCase(), jobType: jobType ? jobType.trim().toLowerCase() : jobType });
 
         await SearchTerm.findOneAndUpdate(
             {

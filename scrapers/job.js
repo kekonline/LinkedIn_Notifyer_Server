@@ -16,7 +16,8 @@ const delay = async (min = 3000, max = 4000, randomIncrease = 0) => {
 
 const getPublicIP = async () => {
     try {
-        const response = await axios.get('https://api.ipify.org?format=json');
+        const response = await axios.get('https://api.ipify.org?format=json',);
+
         console.log('Your public IP address is:', response.data.ip);
     } catch (error) {
         console.error('Error fetching public IP:', error);
@@ -56,7 +57,7 @@ const initializeBrowserAndPage = async () => {
             password: process.env.PROXYPASS,
         });
 
-        getPublicIP();
+        // getPublicIP();
 
         return { page, browser };
     } catch (error) {
@@ -269,12 +270,12 @@ const getJobDescriptionData = async (page) => {
 }
 
 const saveToDBJobListing = async (scrapedJobListings, searchTermId) => {
-    const joblListingsForDB = scrapedJobListings.map(jobListing => {
+    const joblListingsForDB = scrapedJobListings.filter(jobListing => jobListing.jobURL).map(jobListing => {
         const { title, company, location, jobURL } = jobListing;
 
         if (!jobURL) return;
 
-        const simplifiedURL = jobURL.split('?')[0] + '/';
+        const simplifiedURL = (jobURL.split('?')[0] + '/').replace(/https:\/\/[^/]+/, 'https://www.linkedin.com');
         return {
             updateOne: {
                 filter: { jobURL: simplifiedURL },
@@ -293,15 +294,16 @@ const saveToDBJobListing = async (scrapedJobListings, searchTermId) => {
             }
         };
     });
+
     const result = await JobListing.bulkWrite(joblListingsForDB);
     console.log(`Saved To DB Job Listing: ${result}`);
     return result;
 }
 
 const updateJobSearchTermsToScrape = async (scrapedJobListings, searchTermId) => {
-    let jobListingIds = []
+    let jobListingIds = [];
 
-    if (scrapedJobListings && scrapedJobListings.length > 0) {
+    if (scrapedJobListings && scrapedJobListings.upsertedIds) {
         jobListingIds = Object.values(scrapedJobListings.upsertedIds);
     }
 
@@ -314,14 +316,11 @@ const updateJobSearchTermsToScrape = async (scrapedJobListings, searchTermId) =>
             }
         );
         console.log(`Updated Job Search Terms To Scrape: ${jobListingIds.length}`);
-
     } catch (error) {
         console.error("Error updating search terms: ", error);
         throw error;
     }
-
-
-}
+};
 
 
 const saveToDBJobDescription = async (data) => {
