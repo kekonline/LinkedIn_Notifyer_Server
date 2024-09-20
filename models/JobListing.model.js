@@ -22,7 +22,11 @@ const jobListingSchema = new Schema(
         searchTerms: [{
             type: Schema.Types.ObjectId,
             ref: "SearchTerm"
-        }]
+        }],
+        scrapeRetries: {
+            type: Number,
+            default: 0
+        }
     },
     {
         timestamps: true

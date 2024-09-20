@@ -3,7 +3,7 @@ const SearchTerm = require('../models/SearchTerm.model');
 exports.getSearchTerm = async (req, res, next) => {
     const userId = req.payload._id;
     try {
-        const searchTerms = await SearchTerm.find({ users: userId }).select('-users');
+        const searchTerms = await SearchTerm.find({ users: userId }).select('-users').sort({ term: 1 });
         res.status(200).json({ searchTerms, error: false });
     } catch (error) {
         next(error);

@@ -284,7 +284,8 @@ const saveToDBJobListing = async (scrapedJobListings, searchTermId) => {
                         title,
                         company,
                         location,
-                        jobURL: simplifiedURL
+                        jobURL: simplifiedURL,
+                        scrapeRetries: 0
                     },
                     $addToSet: {
                         searchTerms: searchTermId
@@ -325,13 +326,14 @@ const updateJobSearchTermsToScrape = async (scrapedJobListings, searchTermId) =>
 
 const saveToDBJobDescription = async (data) => {
     const dataForDB = data.map(jobListing => {
-        const { _id, description } = jobListing;
+        const { _id, description, scrapeRetries } = jobListing;
         return {
             updateOne: {
                 filter: { _id: _id },
                 update: {
                     $set: {
-                        description: Buffer.from(description, 'utf-8').toString('utf-8')
+                        description: description ? Buffer.from(description, 'utf-8').toString('utf-8') : null,
+                        scrapeRetries: scrapeRetries + 1
                     }
                 },
                 upsert: true
@@ -346,10 +348,10 @@ const getJobListingsWithNoDescription = async () => {
         const jobListings = await JobListing.find({
             $or: [
                 { description: { $exists: false } },
-
-            ]
-        })
-            .limit(10);
+                { description: null }
+            ],
+            scrapeRetries: { $lt: 3 }
+        }).limit(10);
         return jobListings;
     } catch (error) {
         console.error("Error fetching job listings with no description:", error);
@@ -363,13 +365,21 @@ const getJobSearchTermsToScrape = async () => {
         const timeAgo = new Date(Date.now() - process.env.TIME_AGO * 60 * 1000);
 
         return SearchTerm.find({
-            $or: [
-                { lastScraped: { $exists: false } },
-                { lastScraped: { $lte: timeAgo } }
+            $and: [
+                {
+                    $or: [
+                        { lastScraped: { $exists: false } },
+                        { lastScraped: { $lte: timeAgo } }
+                    ]
+                },
+                {
+                    users: { $exists: true, $ne: [] }
+                }
             ]
         })
             .sort({ lastScraped: 1 })
             .limit(1);
+
     } catch (error) {
         console.error("Error fetching job listings: ", error);
         throw error;
@@ -415,6 +425,8 @@ const scrapeJobListing = async () => {
 
                     await browser.close();
                 } catch (innerError) {
+                    if (page) await page.close();
+                    if (browser) await browser.close();
                     console.error('Inner error during scraping: ', innerError);
                     scraperFailed = true;
                 }
@@ -427,6 +439,8 @@ const scrapeJobListing = async () => {
         }
 
     } catch (error) {
+        // if (page) await page.close();
+        // if (browser) await browser.close();
         console.error('Error Scraping Listing: ', error);
     }
 };
@@ -473,6 +487,8 @@ const scrapeJobDescription = async () => {
     try {
         let jobsToScrapeDescription = await getJobListingsWithNoDescription();
 
+        // console.log('jobsToScrapeDescription: ', jobsToScrapeDescription);
+
         if (!jobsToScrapeDescription || jobsToScrapeDescription.length === 0) {
             console.log('No Job Descriptions To Scrape');
             return;
@@ -481,7 +497,6 @@ const scrapeJobDescription = async () => {
         while (jobsToScrapeDescription.length > 0) {
             let allDescriptions = [];
             for await (const jobListing of jobsToScrapeDescription) {
-
                 try {
                     const { page, browser } = await initializeBrowserAndPage();
                     let scraperFailed = await goToURL(page, jobListing.jobURL);
@@ -490,7 +505,9 @@ const scrapeJobDescription = async () => {
                         const [error, gotDescription] = await getJobDescriptionData(page);
                         scraperFailed = error;
                         if (!scraperFailed) {
-                            allDescriptions.push({ _id: jobListing._id, description: gotDescription.description });
+                            allDescriptions.push({ _id: jobListing._id, description: gotDescription.description, scrapeRetries: jobListing.scrapeRetries });
+                        } else {
+                            allDescriptions.push({ _id: jobListing._id, description: null, scrapeRetries: jobListing.scrapeRetries });
                         }
                     }
                     await browser.close();

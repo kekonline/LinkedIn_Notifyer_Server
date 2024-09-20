@@ -22,6 +22,10 @@ const userSchema = new Schema(
             seen: {
                 type: Boolean,
                 default: false
+            },
+            stared: {
+                type: Boolean,
+                default: false
             }
         }]
     }

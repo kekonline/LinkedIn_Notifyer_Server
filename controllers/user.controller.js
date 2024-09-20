@@ -2,6 +2,24 @@ const User = require("../models/User.model")
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
+
+const verifyUser = async (token) => {
+    console.log("token", token);
+
+    try {
+        const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
+        const user = await User.findById(decoded);
+        console.log("user", user);
+        if (!user) {
+            return false;
+        }
+        return true;
+    } catch (err) {
+        console.log("Error Checing User", err);
+        return false;
+    }
+}
+
 exports.getToken = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
@@ -11,6 +29,15 @@ exports.getToken = async (req, res, next) => {
         if (tokenType === "Bearer" && token) {
             try {
                 const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
+
+                const user = await User.findById(decoded);
+                // console.log("user", user);
+                // if (!user) {
+
+                //     return res.status(401).json({ message: "User not found", error: true });
+
+                // }
+
                 return res.status(200).json({ message: "All Good User Is Authenticated", error: false });
             } catch (err) {
                 return res.status(401).json({ message: "Token is invalid", error: true });
@@ -135,7 +162,13 @@ exports.logIn = async (req, res, next) => {
 exports.verify = async (req, res, next) => {
     try {
         console.log("req.payload", req.payload);
-        res.json(req.payload);
+
+        if (verifyUser(req.payload)) {
+            res.json(req.payload);
+        }
+
+        console.log("req.paybaddddddddddddddddddddddload", req.payload);
+
     } catch {
         next(error)
     }
