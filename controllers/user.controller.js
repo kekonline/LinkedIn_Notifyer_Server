@@ -2,51 +2,10 @@ const User = require("../models/User.model")
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
-
-const verifyUser = async (token) => {
-    console.log("token", token);
-
-    try {
-        const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
-        const user = await User.findById(decoded);
-        console.log("user", user);
-        if (!user) {
-            return false;
-        }
-        return true;
-    } catch (err) {
-        console.log("Error Checing User", err);
-        return false;
-    }
-}
-
 exports.getToken = async (req, res, next) => {
-    const authHeader = req.headers.authorization;
-
-    if (authHeader) {
-        const [tokenType, token] = authHeader.split(" ");
-
-        if (tokenType === "Bearer" && token) {
-            try {
-                const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
-
-                const user = await User.findById(decoded);
-                // console.log("user", user);
-                // if (!user) {
-
-                //     return res.status(401).json({ message: "User not found", error: true });
-
-                // }
-
-                return res.status(200).json({ message: "All Good User Is Authenticated", error: false });
-            } catch (err) {
-                return res.status(401).json({ message: "Token is invalid", error: true });
-            }
-        }
-    }
 
     try {
-        console.log("Signing Up User");
+        console.log("Giving User Auth Token");
         const newUser = await User.create({});
         console.log("newUser", newUser);
 
@@ -55,12 +14,12 @@ exports.getToken = async (req, res, next) => {
             algorithm: "HS256",
             expiresIn: "365d",
         });
+
         res.json({ authToken });
     } catch (error) {
         console.log("Error Signing Up User: ", error);
         next(error);
     }
-
 
 }
 
@@ -129,6 +88,7 @@ exports.logIn = async (req, res, next) => {
             return;
         }
 
+
         // const isPasswordCorrect = await bcrypt.compare(
         //     password,
         //     logingInUser.password
@@ -162,17 +122,21 @@ exports.logIn = async (req, res, next) => {
 exports.verify = async (req, res, next) => {
     try {
         console.log("req.payload", req.payload);
+        const user = await User.findById(req.payload._id);
+        console.log("user", user);
 
-        if (verifyUser(req.payload)) {
-            res.json(req.payload);
+        if (!user) {
+            console.log("User not found");
+            return res.status(401).json({ message: "Token is invalid", error: true });
         }
 
-        console.log("req.paybaddddddddddddddddddddddload", req.payload);
-
-    } catch {
-        next(error)
+        res.status(200).json({ message: "All Good User Is Authenticated", error: false });
+    } catch (error) {
+        console.error("Error verifying user:", error);
+        next(error);
     }
 };
+
 
 //Post /auth/newPassword - password change request
 exports.newPassword = async (req, res, next) => {
