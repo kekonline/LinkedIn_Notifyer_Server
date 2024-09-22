@@ -440,7 +440,7 @@ const scrapeJobListing = async () => {
 
     } catch (error) {
         // if (page) await page.close();
-        // if (browser) await browser.close();
+        if (browser) await browser.close();
         console.error('Error Scraping Listing: ', error);
     }
 };
@@ -514,7 +514,7 @@ const scrapeJobDescription = async () => {
                     await delay(10000, 20000);
                 } catch (innerError) {
                     console.error(`Inner error during scraping job description ${jobListing._id}: `, innerError);
-                    if (page) await page.close();
+                    // if (page) await page.close();
                     if (browser) await browser.close();
                 }
             }

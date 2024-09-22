@@ -23,11 +23,14 @@ const userSchema = new Schema(
                 type: Boolean,
                 default: false
             },
-            stared: {
+            starred: {
                 type: Boolean,
                 default: false
             }
         }]
+    },
+    {
+        timestamps: true
     }
 );
 

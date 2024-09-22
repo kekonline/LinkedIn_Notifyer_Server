@@ -1,4 +1,5 @@
 const SearchTerm = require('../models/SearchTerm.model');
+const User = require("../models/User.model")
 
 exports.getSearchTerm = async (req, res, next) => {
     const userId = req.payload._id;
@@ -23,7 +24,7 @@ exports.createSearchTerm = async (req, res, next) => {
     try {
         // serchTermExists = await SearchTerm.findOne({ term: term.trim().toLowerCase(), location: location.trim().toLowerCase(), jobType: jobType ? jobType.trim().toLowerCase() : jobType });
 
-        await SearchTerm.findOneAndUpdate(
+        const updatedSearchTerm = await SearchTerm.findOneAndUpdate(
             {
                 term: term.trim().toLowerCase(),
                 location: location.trim().toLowerCase(),
@@ -33,9 +34,23 @@ exports.createSearchTerm = async (req, res, next) => {
                 $addToSet: { users: userId }
             },
             {
+                new: true,
                 upsert: true     // Create a new document if none match the query
             }
         );
+
+        const searchTermId = updatedSearchTerm ? updatedSearchTerm._id : null;
+
+        if (searchTermId) {
+            // Add the searchTermId to the user's searchTerms
+            await User.findByIdAndUpdate(
+                userId,
+                {
+                    $addToSet: { searchTerms: searchTermId }
+                }
+            );
+        }
+
         res.status(201).json({ message: "Search term updated successfully", error: false });
     } catch (error) {
         next(error);
@@ -54,6 +69,19 @@ exports.deleteSearchTerm = async (req, res, next) => {
                 $pull: { users: userId }
             }
         );
+
+        await User.findOneAndUpdate(
+            {
+                _id: userId
+            },
+            {
+                $pull: { searchTerms: searchTermToDelete }
+            }
+        );
+
+
+
+
         res.status(200).json({ message: "Search term deleted successfully", error: false });
     } catch (error) {
         next(error);

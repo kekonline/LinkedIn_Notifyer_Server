@@ -8,17 +8,17 @@ const authentication = expressjwt({
     requestProperty: "payload",
     getToken: (req) => {
         if (!req.headers || !req.headers.authorization) {
-            console.log("No Token");
+            // console.log("No Token");
             return null;
         }
 
         const [tokenType, token] = req.headers.authorization.split(" ");
 
         if (tokenType !== "Bearer") {
-            console.log("Invalid Token Type");
+            // console.log("Invalid Token Type");
             return null;
         }
-        console.log("Token Has Value: ", token);
+        // console.log("Token Has Value: ", token);
         return token;
     }
 });
@@ -30,11 +30,11 @@ const checkUserExistence = async (req, res, next) => {
         const user = await User.findById(_id);
 
         if (!user) {
-            console.log("User not found");
+            // console.log("User not found");
             return res.status(404).json({ message: "User not found" });
         }
 
-        console.log("User was found");
+        // console.log("User was found");
         // req.user = user;
 
         next();

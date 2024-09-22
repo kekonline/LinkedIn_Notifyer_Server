@@ -121,9 +121,9 @@ exports.logIn = async (req, res, next) => {
 
 exports.verify = async (req, res, next) => {
     try {
-        console.log("req.payload", req.payload);
+        // console.log("req.payload", req.payload);
         const user = await User.findById(req.payload._id);
-        console.log("user", user);
+        // console.log("user", user);
 
         if (!user) {
             console.log("User not found");
