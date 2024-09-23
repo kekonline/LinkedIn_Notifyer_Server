@@ -25,12 +25,12 @@ exports.getToken = async (req, res, next) => {
 
 exports.signIn = async (req, res, next) => {
 
-
     const { email, password } = req.body;
+    console.log(req.body);
 
     if (!email || !password) {
         res.status(400).json({ message: "All fields are required", error: true });
-        // console.log(req.body);
+
         return;
     }
     try {
@@ -51,14 +51,14 @@ exports.signIn = async (req, res, next) => {
             return;
         }
 
-        const regexPassword =
-            /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{5,}$/gm;
-        if (regexPassword.test(password) === false) {
-            res
-                .status(400)
-                .json({ message: "Password must be at least 5 characters long and contain at least one uppercase letter, one lowercase letter and one number", error: true });
-            return;
-        }
+        // const regexPassword =
+        //     /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{5,}$/gm;
+        // if (regexPassword.test(password) === false) {
+        //     res
+        //         .status(400)
+        //         .json({ message: "Password must be at least 5 characters long and contain at least one uppercase letter, one lowercase letter and one number", error: true });
+        //     return;
+        // }
 
         // const salt = await bcrypt.genSalt(10);
         // const passwordHash = await bcrypt.hash(password, salt);
@@ -119,18 +119,37 @@ exports.logIn = async (req, res, next) => {
 
 }
 
+const maskEmail = (email) => {
+
+    const [localPart, domainPart] = email.split('@');
+    const visiblePart = localPart.slice(0, 4);
+    const maskedPart = '*'.repeat(localPart.length - 4);
+
+    return `${visiblePart}${maskedPart}@${domainPart}`;
+};
+
+
 exports.verify = async (req, res, next) => {
     try {
         // console.log("req.payload", req.payload);
         const user = await User.findById(req.payload._id);
-        // console.log("user", user);
+        console.log("user", user);
 
         if (!user) {
             console.log("User not found");
             return res.status(401).json({ message: "Token is invalid", error: true });
         }
 
-        res.status(200).json({ message: "All Good User Is Authenticated", error: false });
+        const { email, getNotifications } = user;
+
+        res.status(200).json({
+            enrolled: email ? true : false,
+            email: email ? maskEmail(email) : null,
+            getNotifications,
+            message: "All Good User Is Authenticated",
+            error: false
+        });
+
     } catch (error) {
         console.error("Error verifying user:", error);
         next(error);
@@ -168,3 +187,26 @@ exports.newPassword = async (req, res, next) => {
     }
 };
 
+exports.userInfo = async (req, res, next) => {
+
+    try {
+        const user = await User.findById(req.payload._id);
+        console.log("user", user);
+
+        if (!user) {
+            console.log("User not found");
+            return res.status(401).json({ message: "Token is invalid", error: true });
+        }
+
+        const { getNotifications } = req.body;
+        await User.findByIdAndUpdate(
+            req.payload._id,
+            { getNotifications: getNotifications },
+            { new: true }
+        );
+        res.json({ message: "Notifications updated successfully", error: false });
+
+    } catch (error) {
+        next(error);
+    }
+};

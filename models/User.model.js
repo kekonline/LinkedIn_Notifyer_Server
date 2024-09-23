@@ -27,7 +27,11 @@ const userSchema = new Schema(
                 type: Boolean,
                 default: false
             }
-        }]
+        }],
+        getNotifications: {
+            type: Boolean,
+            default: false
+        }
     },
     {
         timestamps: true

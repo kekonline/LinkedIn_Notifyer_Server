@@ -1,5 +1,6 @@
 const app = require("./config/app");
-const { scrapeJobListing, scrapeJobDescription } = require("./scrapers/job");
+const { scrapeJobListing, scrapeJobDescription } = require("./scrapers/scrapeJob");
+const { sendMails } = require("./mailer/mailerJob");
 
 // ℹ️ Set the PORT and start the server
 const PORT = process.env.PORT || 5005;
@@ -20,6 +21,8 @@ app.listen(PORT, () => {
 
 // setInterval(startScraping, 60000);
 
-startScraping()
+sendMails()
+
+// startScraping()
 
 //check erorr in next and middleware
