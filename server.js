@@ -21,7 +21,7 @@ app.listen(PORT, () => {
 
 // setInterval(startScraping, 60000);
 
-sendMails()
+// sendMails()
 
 // startScraping()
 
