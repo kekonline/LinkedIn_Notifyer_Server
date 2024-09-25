@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 const User = require("../models/User.model")
 const SearchTerm = require('../models/SearchTerm.model');
-const JobListing = require('../models/JobListing.model');
+// const JobListing = require('../models/JobListing.model');
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -37,12 +37,12 @@ const mailOptions = (user) => ({
 const getEmailsToSend = async () => {
 
     try {
-        const users = await User.find({ email: { $exists: true, $ne: null } })
+        const users = await User.find({ email: { $exists: true, $ne: null }, getNotifications: true })
             .select('email seenJobListings')
             .sort('email'); // Sort users by email
 
         if (!users || users.length === 0) {
-            return res.status(404).json({ error: 'No users with an email found' });
+            return [];
         }
 
         let usersWithUnseenJobListings = [];

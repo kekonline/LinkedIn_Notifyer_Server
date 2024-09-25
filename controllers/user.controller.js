@@ -199,11 +199,19 @@ exports.userInfo = async (req, res, next) => {
         }
 
         const { getNotifications } = req.body;
-        await User.findByIdAndUpdate(
+        // console.log("getNotifications", getNotifications);
+        // console.log("req.payload._id", req.payload._id);
+        // console.log("user", user);
+
+
+        const UpdateUserInfo = await User.findByIdAndUpdate(
             req.payload._id,
             { getNotifications: getNotifications },
             { new: true }
         );
+
+        // console.log("UpdateUserInfo", UpdateUserInfo);
+
         res.json({ message: "Notifications updated successfully", error: false });
 
     } catch (error) {

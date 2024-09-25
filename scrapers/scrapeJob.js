@@ -172,8 +172,22 @@ const insertCountry = async (page, country) => {
 
 }
 
-const setRemoteWork = async (page, jobType) => {
+const setWorkType = async (page, jobType) => {
     try {
+
+        let jobcode = '';
+        switch (jobType) {
+            case "remote":
+                jobcode = "f_WT-2"
+                break;
+            case "hybrid":
+                jobcode = "f_WT-1"
+                break;
+            case "on-site":
+                jobcode = "f_WT-0"
+                break;
+        }
+
         console.log(`Set ${jobType} Work`);
         await delay(4000, 5000);
         if (!(await page.$('button[aria-label="Remote filter. Clicking this button displays all Remote filter options."]'))) {
@@ -182,11 +196,11 @@ const setRemoteWork = async (page, jobType) => {
         }
         await page.locator('button[aria-label="Remote filter. Clicking this button displays all Remote filter options."]').click();
         await delay();
-        if (await !page.$('input#f_WT-2')) {
-            console.log('No Remote Work Found');
+        if (await !page.$(`input#${jobcode}`)) {
+            console.log(`No ${jobType} Work Found`);
             return [false, false]
         }
-        await page.locator('#f_WT-2').click();
+        await page.locator(`input#${jobcode}`).click();
         await delay();
         await page.locator('button.filter__submit-button[data-tracking-control-name="public_jobs_f_WT"]').click();
         return [false, true]
@@ -281,9 +295,9 @@ const saveToDBJobListing = async (scrapedJobListings, searchTermId) => {
                 filter: { jobURL: simplifiedURL },
                 update: {
                     $set: {
-                        title,
-                        company,
-                        location,
+                        title: title ? Buffer.from(title, 'utf-8').toString('utf-8') : null,
+                        company: company ? Buffer.from(company, 'utf-8').toString('utf-8') : null,
+                        location: location ? Buffer.from(location, 'utf-8').toString('utf-8') : null,
                         jobURL: simplifiedURL,
                         scrapeRetries: 0
                     },
@@ -402,13 +416,19 @@ const scrapeJobListing = async () => {
             let { _id: searchTermId, term, location, jobType } = searchTermsToScrape[0];
 
             do {
+                let page, browser;
                 try {
-                    const { page, browser } = await initializeBrowserAndPage();
+
+                    const { page: initializedPage, browser: initializedBrowser } = await initializeBrowserAndPage();
+                    page = initializedPage;
+                    browser = initializedBrowser;
+
+
                     scraperFailed = await goToURL(page, 'https://www.linkedin.com/jobs/search');
                     if (!scraperFailed) scraperFailed = await acceptCookies(page);
                     if (!scraperFailed) scraperFailed = await insertJob(page, term);
                     if (!scraperFailed) scraperFailed = await insertCountry(page, location);
-                    if (!scraperFailed) [scraperFailed, dataAvailable] = await setRemoteWork(page, jobType);
+                    if (!scraperFailed) [scraperFailed, dataAvailable] = await setWorkType(page, jobType);
                     if (!scraperFailed && dataAvailable) [scraperFailed, dataAvailable] = await setJobsLast24Hours(page);
 
                     if (dataAvailable && !scraperFailed) {
@@ -422,28 +442,27 @@ const scrapeJobListing = async () => {
                     } else if (!dataAvailable && !scraperFailed) {
                         await updateJobSearchTermsToScrape([], searchTermId);
                     }
-
-                    await browser.close();
+                    if (browser) await browser.close();
                 } catch (innerError) {
+                    console.error('Inner error during scraping: ', innerError);
                     if (page) await page.close();
                     if (browser) await browser.close();
-                    console.error('Inner error during scraping: ', innerError);
                     scraperFailed = true;
                 }
 
                 retries++;
-                await delay(10000, 20000);
+                await delay(10000, 20000); // Random delay between retries
             } while (retries < 3 && scraperFailed);
 
+            // Fetch new search terms for the next iteration
             searchTermsToScrape = await getJobSearchTermsToScrape();
         }
 
     } catch (error) {
-        // if (page) await page.close();
-        if (browser) await browser.close();
         console.error('Error Scraping Listing: ', error);
     }
 };
+
 
 // const scrapeJobDescription = async () => {
 
@@ -487,8 +506,6 @@ const scrapeJobDescription = async () => {
     try {
         let jobsToScrapeDescription = await getJobListingsWithNoDescription();
 
-        // console.log('jobsToScrapeDescription: ', jobsToScrapeDescription);
-
         if (!jobsToScrapeDescription || jobsToScrapeDescription.length === 0) {
             console.log('No Job Descriptions To Scrape');
             return;
@@ -497,8 +514,10 @@ const scrapeJobDescription = async () => {
         while (jobsToScrapeDescription.length > 0) {
             let allDescriptions = [];
             for await (const jobListing of jobsToScrapeDescription) {
+                let browser;
                 try {
-                    const { page, browser } = await initializeBrowserAndPage();
+                    const { page, browser: initializedBrowser } = await initializeBrowserAndPage();
+                    browser = initializedBrowser;
                     let scraperFailed = await goToURL(page, jobListing.jobURL);
                     if (!scraperFailed) scraperFailed = await acceptCookies(page);
                     if (!scraperFailed) {
@@ -514,8 +533,9 @@ const scrapeJobDescription = async () => {
                     await delay(10000, 20000);
                 } catch (innerError) {
                     console.error(`Inner error during scraping job description ${jobListing._id}: `, innerError);
-                    // if (page) await page.close();
-                    if (browser) await browser.close();
+                    if (browser) {
+                        await browser.close();
+                    }
                 }
             }
 
@@ -531,6 +551,7 @@ const scrapeJobDescription = async () => {
         console.error('Error Scraping Description: ', error);
     }
 };
+
 
 
 
