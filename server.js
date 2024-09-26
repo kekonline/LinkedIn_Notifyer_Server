@@ -36,6 +36,6 @@ async function runScrapingTasks() {
     }
 }
 
-setInterval(runScrapingTasks, interval);
+// setInterval(runScrapingTasks, interval);
 
-runScrapingTasks();
+// runScrapingTasks();

@@ -24,6 +24,9 @@ const searchTermSchema = new Schema(
         }],
         lastScraped: {
             type: Date
+        },
+        URL: {
+            type: String
         }
     }
 );

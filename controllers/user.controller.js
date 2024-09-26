@@ -23,7 +23,7 @@ exports.getToken = async (req, res, next) => {
 
 }
 
-exports.signIn = async (req, res, next) => {
+exports.register = async (req, res, next) => {
 
     const { email, password } = req.body;
     console.log(req.body);
@@ -60,12 +60,12 @@ exports.signIn = async (req, res, next) => {
         //     return;
         // }
 
-        // const salt = await bcrypt.genSalt(10);
-        // const passwordHash = await bcrypt.hash(password, salt);
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(password, salt);
 
         await User.findOneAndUpdate(
             { _id: userId },
-            { $set: { email, password } }
+            { $set: { email, password: passwordHash } }
         );
 
         res.status(201).json({ message: "User updated successfully", error: false });
@@ -79,6 +79,12 @@ exports.signIn = async (req, res, next) => {
 
 exports.logIn = async (req, res, next) => {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+        res.status(400).json({ message: "All fields are required", error: true });
+        return;
+    }
+
     try {
         const logingInUser = await User.findOne({ email });
         if (logingInUser === null) {
@@ -89,12 +95,12 @@ exports.logIn = async (req, res, next) => {
         }
 
 
-        // const isPasswordCorrect = await bcrypt.compare(
-        //     password,
-        //     logingInUser.password
-        // );
+        const isPasswordCorrect = await bcrypt.compare(
+            password,
+            logingInUser.password
+        );
 
-        const isPasswordCorrect = password === logingInUser.password;
+        // const isPasswordCorrect = password === logingInUser.password;
 
         if (!isPasswordCorrect) {
             res
@@ -161,21 +167,23 @@ exports.verify = async (req, res, next) => {
 exports.newPassword = async (req, res, next) => {
     // console.log("token", req.payload)
     // console.log(req.body);
+
+    const { oldPassword, newPassword } = req.body;
     try {
         const userInfo = await User.findById(req.payload._id);
-        // const isPasswordCorrect = await bcrypt.compare(
-        //     req.body.password,
-        //     parentInfo.password
-        // );
-        const isPasswordCorrect = password === logingInUser.password;
+        const isPasswordCorrect = await bcrypt.compare(
+            oldPassword,
+            userInfo.password
+        );
+        // const isPasswordCorrect = oldPassword === userInfo.password;
 
         if (isPasswordCorrect) {
             // console.log("passwords are the same")
-            // const salt = await bcrypt.genSalt(10);
-            // const passwordHash = await bcrypt.hash(req.body.newPassword, salt);
+            const salt = await bcrypt.genSalt(10);
+            const passwordHash = await bcrypt.hash(newPassword, salt);
             const UpdateUserInfo = await User.findByIdAndUpdate(
                 req.payload._id,
-                { password: req.body.newPassword },
+                { password: passwordHash },
                 { new: true }
             );
             res.json({ message: "Password updated successfully", error: false });

@@ -1,5 +1,6 @@
 require("dotenv").config();
 const axios = require('axios');
+const { URL } = require('url');
 const puppeteer = require('puppeteer-extra');
 const stealthPlugin = require('puppeteer-extra-plugin-stealth');
 const JobListing = require('../models/JobListing.model');
@@ -315,8 +316,15 @@ const saveToDBJobListing = async (scrapedJobListings, searchTermId) => {
     return result;
 }
 
-const updateJobSearchTermsToScrape = async (scrapedJobListings, searchTermId) => {
+const updateJobSearchTermsToScrape = async (scrapedJobListings, searchTermId, url) => {
     let jobListingIds = [];
+
+    const parsedUrl = new URL(url);
+    const params = new URLSearchParams(parsedUrl.search);
+
+    params.delete('geoId');
+
+    const updatedUrl = `${parsedUrl.origin}${parsedUrl.pathname}?${params.toString()}`;
 
     if (scrapedJobListings && scrapedJobListings.upsertedIds) {
         jobListingIds = Object.values(scrapedJobListings.upsertedIds);
@@ -324,10 +332,10 @@ const updateJobSearchTermsToScrape = async (scrapedJobListings, searchTermId) =>
 
     try {
         await SearchTerm.updateOne(
-            { _id: searchTermId }, // Filter by _id
+            { _id: searchTermId },
             {
                 $addToSet: { jobListings: { $each: jobListingIds } }, // Add job listing IDs to the array, ensuring no duplicates
-                $set: { lastScraped: new Date() }
+                $set: { lastScraped: new Date(), URL: updatedUrl }
             }
         );
         console.log(`Updated Job Search Terms To Scrape: ${jobListingIds.length}`);
@@ -423,24 +431,24 @@ const scrapeJobListing = async () => {
                     page = initializedPage;
                     browser = initializedBrowser;
 
-
-                    scraperFailed = await goToURL(page, 'https://www.linkedin.com/jobs/search');
-                    if (!scraperFailed) scraperFailed = await acceptCookies(page);
-                    if (!scraperFailed) scraperFailed = await insertJob(page, term);
-                    if (!scraperFailed) scraperFailed = await insertCountry(page, location);
-                    if (!scraperFailed) [scraperFailed, dataAvailable] = await setWorkType(page, jobType);
-                    if (!scraperFailed && dataAvailable) [scraperFailed, dataAvailable] = await setJobsLast24Hours(page);
-
+                    scraperFailed = await goToURL(page, searchTermsToScrape[0].URL ? searchTermsToScrape[0].URL : 'https://www.linkedin.com/jobs/search');
+                    if (!searchTermsToScrape[0].URL) {
+                        if (!scraperFailed) scraperFailed = await acceptCookies(page);
+                        if (!scraperFailed) scraperFailed = await insertJob(page, term);
+                        if (!scraperFailed) scraperFailed = await insertCountry(page, location);
+                        if (!scraperFailed) [scraperFailed, dataAvailable] = await setWorkType(page, jobType);
+                        if (!scraperFailed && dataAvailable) [scraperFailed, dataAvailable] = await setJobsLast24Hours(page);
+                    }
                     if (dataAvailable && !scraperFailed) {
                         const scrapedJobListings = await getJobListingData(page);
                         if (scrapedJobListings) {
                             const savedJobListings = await saveToDBJobListing(scrapedJobListings, searchTermId);
-                            await updateJobSearchTermsToScrape(savedJobListings, searchTermId);
+                            await updateJobSearchTermsToScrape(savedJobListings, searchTermId, page.url());
                         } else {
                             scraperFailed = true;
                         }
                     } else if (!dataAvailable && !scraperFailed) {
-                        await updateJobSearchTermsToScrape([], searchTermId);
+                        await updateJobSearchTermsToScrape([], searchTermId, page.url());
                     }
                     if (browser) await browser.close();
                 } catch (innerError) {
