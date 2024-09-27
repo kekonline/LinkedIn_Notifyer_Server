@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer');
 const User = require("../models/User.model")
 const SearchTerm = require('../models/SearchTerm.model');
+require("dotenv").config();
 // const JobListing = require('../models/JobListing.model');
 
 const transporter = nodemailer.createTransport({
@@ -26,11 +27,11 @@ const composesedHTML = (unseenJobListings) => {
     return message;
 };
 
-const mailOptions = (user) => ({
+const mailOptions = (sendTo, subject, message) => ({
     from: process.env.GMAILUSER,
-    to: user.email,
-    subject: 'New Job!',
-    html: composesedHTML(user.unseenJobListings),
+    to: sendTo,
+    subject: subject,
+    html: message,
 });
 
 
@@ -78,7 +79,7 @@ const getEmailsToSend = async () => {
 
 }
 
-const sendMails = async () => {
+const sendJobsMail = async () => {
 
     const usersWithUnseenJobListings = await getEmailsToSend()
     // console.log(usersWithUnseenJobListings[0].unseenJobListings[0])
@@ -88,7 +89,7 @@ const sendMails = async () => {
     try {
         usersWithUnseenJobListings.forEach(user => {
 
-            transporter.sendMail(mailOptions(user), (error, info) => {
+            transporter.sendMail(mailOptions(user.email, 'New Job!', composesedHTML(user.unseenJobListings)), (error, info) => {
                 if (error) {
                     return console.log(error);
                 }
@@ -102,6 +103,30 @@ const sendMails = async () => {
 
 }
 
+const sendActivationMail = async (sentoTo, token) => {
+
+    const message = `<p>Hi there ${sentoTo}!</p>
+<p>Please click on the link below to activate your account:</p>
+<p><a href="${process.env.ORIGIN || "http://localhost:5173"}/account/activate/${token}">Activate Account</a></p>`
+
+
+    try {
+
+        transporter.sendMail(mailOptions(sentoTo, 'Activate Your Account', message), (error, info) => {
+            if (error) {
+                return console.log(error);
+            }
+            console.log('Email sent: ' + info.response);
+        });
+
+
+    } catch (error) {
+        console.log(error)
+    }
+
+}
+
 module.exports = {
-    sendMails
+    sendJobsMail,
+    sendActivationMail
 };

@@ -27,6 +27,7 @@
     "puppeteer": "^23.3.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
-    "puppeteer-repo": "github:GoogleChrome/puppeteer"
+    "puppeteer-repo": "github:GoogleChrome/puppeteer",
+    "uuid": "^10.0.0"
   }
 }

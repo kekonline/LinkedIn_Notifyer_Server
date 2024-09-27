@@ -31,6 +31,11 @@ const userSchema = new Schema(
         getNotifications: {
             type: Boolean,
             default: false
+        },
+        token: { value: String, expircy: Date },
+        isActive: {
+            type: Boolean,
+            default: false
         }
     },
     {

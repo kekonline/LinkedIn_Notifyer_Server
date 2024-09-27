@@ -1,6 +1,8 @@
 const User = require("../models/User.model")
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const { v4: uuidv4 } = require("uuid");
+const { sendActivationMail } = require("../mailer/mailerJob");
 
 exports.getToken = async (req, res, next) => {
 
@@ -63,12 +65,16 @@ exports.register = async (req, res, next) => {
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
+        const activationToken = uuidv4();
+
         await User.findOneAndUpdate(
             { _id: userId },
-            { $set: { email, password: passwordHash } }
+            { $set: { email, password: passwordHash, "token.value": activationToken } }
         );
 
-        res.status(201).json({ message: "User updated successfully", error: false });
+        sendActivationMail(email, activationToken);
+
+        res.status(201).json({ message: "User created successfully", error: false });
 
     } catch (error) {
         next(error);
@@ -146,12 +152,13 @@ exports.verify = async (req, res, next) => {
             return res.status(401).json({ message: "Token is invalid", error: true });
         }
 
-        const { email, getNotifications } = user;
+        const { email, getNotifications, isActive } = user;
 
         res.status(200).json({
             enrolled: email ? true : false,
             email: email ? maskEmail(email) : null,
             getNotifications,
+            isActive,
             message: "All Good User Is Authenticated",
             error: false
         });
@@ -206,6 +213,11 @@ exports.userInfo = async (req, res, next) => {
             return res.status(401).json({ message: "Token is invalid", error: true });
         }
 
+        if (user && !user.isActive) {
+            console.log("User is not active");
+            return res.status(401).json({ message: " User is not active", error: true });
+        }
+
         const { getNotifications } = req.body;
         // console.log("getNotifications", getNotifications);
         // console.log("req.payload._id", req.payload._id);
@@ -226,3 +238,54 @@ exports.userInfo = async (req, res, next) => {
         next(error);
     }
 };
+
+
+
+exports.activateUser = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.payload._id);
+        console.log("user", user);
+
+        if (!user) {
+            console.log("User not found");
+            return res.status(401).json({ message: "Token is invalid", error: true });
+        }
+        if (user && user.isActive) {
+            console.log("User is already active");
+            return res.status(401).json({ message: "User is already active", error: true });
+        }
+        const UpdateUserInfo = await User.findByIdAndUpdate(
+            req.payload._id, { isActive: true, "token.value": null }, { new: true }
+        );
+        res.json({ message: "User activated successfully", error: false });
+    } catch (error) {
+        next(error);
+    }
+
+
+}
+
+
+exports.resendactivation = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.payload._id);
+        console.log("user", user);
+
+        if (!user) {
+            console.log("User not found");
+            return res.status(401).json({ message: "Token is invalid", error: true });
+        }
+        if (user && user.isActive) {
+            console.log("User is already active");
+            return res.status(401).json({ message: "User is already active", error: true });
+        }
+
+        sendActivationMail(user.email, user.token.value);
+        res.json({ message: "Activation email sent successfully", error: false });
+
+    } catch (error) {
+        next(error);
+    }
+
+
+}
