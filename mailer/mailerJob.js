@@ -103,16 +103,11 @@ const sendJobsMail = async () => {
 
 }
 
-const sendActivationMail = async (sentoTo, token) => {
-
-    const message = `<p>Hi there ${sentoTo}!</p>
-<p>Please click on the link below to activate your account:</p>
-<p><a href="${process.env.ORIGIN || "http://localhost:5173"}/account/activate/${token}">Activate Account</a></p>`
-
+const sendMail = async (sentoTo, subject, message) => {
 
     try {
 
-        transporter.sendMail(mailOptions(sentoTo, 'Activate Your Account', message), (error, info) => {
+        transporter.sendMail(mailOptions(sentoTo, subject, message), (error, info) => {
             if (error) {
                 return console.log(error);
             }
@@ -128,5 +123,5 @@ const sendActivationMail = async (sentoTo, token) => {
 
 module.exports = {
     sendJobsMail,
-    sendActivationMail
+    sendMail
 };

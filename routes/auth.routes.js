@@ -24,6 +24,12 @@ router.put("/user", authentication, userController.userInfo);
 router.get("/activate/:token", authentication, userController.activateUser);
 
 //GET /api/auth/resendactivation - Resend Activation
-router.get("/resendactivation", authentication, userController.resendactivation);
+router.get("/resendactivation", authentication, userController.reSendActivation);
+
+//POST /api/auth/sendforgotpasswordemail - Forgot Password
+router.post("/sendforgotpasswordemail", authentication, userController.sendForgotPasswordEmail);
+
+//POST /api/auth/sendforgotpasswordemail - Forgot Password
+router.post("/resetpassword", authentication, userController.resetPassword);
 
 module.exports = router;

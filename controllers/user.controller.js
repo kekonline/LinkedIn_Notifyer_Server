@@ -2,7 +2,8 @@ const User = require("../models/User.model")
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { v4: uuidv4 } = require("uuid");
-const { sendActivationMail } = require("../mailer/mailerJob");
+const { sendMail } = require("../mailer/mailerJob");
+require("dotenv").config();
 
 exports.getToken = async (req, res, next) => {
 
@@ -46,10 +47,18 @@ exports.register = async (req, res, next) => {
 
         let userId = req.payload._id;
         isUserAlreadyRegistered = await User.findOne({ _id: userId });
-        if (isUserAlreadyRegistered.email) {
+        if (isUserAlreadyRegistered && isUserAlreadyRegistered.email) {
             res
                 .status(400)
                 .json({ message: "You already have an account", error: true });
+            return;
+        }
+
+        const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!regex.test(email)) {
+            res
+                .status(400)
+                .json({ message: "Invalid email", error: true });
             return;
         }
 
@@ -72,7 +81,12 @@ exports.register = async (req, res, next) => {
             { $set: { email, password: passwordHash, "token.value": activationToken } }
         );
 
-        sendActivationMail(email, activationToken);
+        const message = `<p>Hi there ${email}!</p>
+        <p>Please click on the link below to activate your account:</p>
+        <p><a href="${process.env.ORIGIN || "http://localhost:5173"}/account/activate/${activationToken}">Activate Account</a></p>`
+
+
+        sendMail(email, 'Activate Your Account', message);
 
         res.status(201).json({ message: "User created successfully", error: false });
 
@@ -145,8 +159,8 @@ exports.verify = async (req, res, next) => {
     try {
         // console.log("req.payload", req.payload);
         const user = await User.findById(req.payload._id);
-        console.log("user", user);
-
+        // console.log("user", user);
+        // 
         if (!user) {
             console.log("User not found");
             return res.status(401).json({ message: "Token is invalid", error: true });
@@ -218,6 +232,10 @@ exports.userInfo = async (req, res, next) => {
             return res.status(401).json({ message: " User is not active", error: true });
         }
 
+        if (!user.email) {
+            return res.status(401).json({ message: "User email is required", error: true });
+        }
+
         const { getNotifications } = req.body;
         // console.log("getNotifications", getNotifications);
         // console.log("req.payload._id", req.payload._id);
@@ -250,6 +268,11 @@ exports.activateUser = async (req, res, next) => {
             console.log("User not found");
             return res.status(401).json({ message: "Token is invalid", error: true });
         }
+
+        if (!user.email) {
+            return res.status(401).json({ message: "User email is required", error: true });
+        }
+
         if (user && user.isActive) {
             console.log("User is already active");
             return res.status(401).json({ message: "User is already active", error: true });
@@ -266,7 +289,7 @@ exports.activateUser = async (req, res, next) => {
 }
 
 
-exports.resendactivation = async (req, res, next) => {
+exports.reSendActivation = async (req, res, next) => {
     try {
         const user = await User.findById(req.payload._id);
         console.log("user", user);
@@ -280,12 +303,118 @@ exports.resendactivation = async (req, res, next) => {
             return res.status(401).json({ message: "User is already active", error: true });
         }
 
-        sendActivationMail(user.email, user.token.value);
+        if (!user.email) {
+            return res.status(401).json({ message: "User email is required", error: true });
+        }
+
+        const message = `<p>Hi there ${user.email}!</p>
+        <p>Please click on the link below to activate your account:</p>
+        <p><a href="${process.env.ORIGIN || "http://localhost:5173"}/account/activate/${user.token.value}">Activate Account</a></p>`
+
+        sendMail(user.email, 'Activate Your Account', message);
         res.json({ message: "Activation email sent successfully", error: false });
 
     } catch (error) {
         next(error);
     }
-
-
 }
+
+exports.sendForgotPasswordEmail = async (req, res, next) => {
+
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: "All fields are required", error: true });
+        }
+
+        const user = await User.find({ email: email });
+        // console.log("user", user);
+
+        if (user && user.length === 0) {
+            console.log("User not found");
+            return res.status(401).json({ message: "Token is invalid", error: true });
+        }
+
+
+        if (!user[0].email) {
+            return res.status(401).json({ message: "User email is required", error: true });
+        }
+        // if (user && !user.isActive) {
+        //     console.log("User is not active");
+        //     return res.status(401).json({ message: " User is not active", error: true });
+        // }
+
+        if (user[0].email !== email) {
+            return res.status(400).json({ message: "Invalid email", error: true });
+        }
+
+        const activationToken = uuidv4();
+
+        await User.findByIdAndUpdate(
+            user[0]._id, { isActive: true, "token.value": activationToken, "token.expiry": Date.now() + 15 * 60 * 1000 }, { new: true }
+        );
+
+
+
+        const message = `<p>Hi there ${user[0].email}!</p>
+        <p>Please click on the link to follow to reset your password:</p>
+        <p><a href="${process.env.ORIGIN || "http://localhost:5173"}/account/resetpassword/${activationToken}">Reset Password</a></p>`
+
+        sendMail(user[0].email, 'Password Reset', message);
+        res.json({ message: "Reset Password email sent successfully", error: false });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.resetPassword = async (req, res, next) => {
+
+    try {
+        const { email, password, token } = req.body;
+
+        if (!email || !password || !token) {
+            return res.status(400).json({ message: "All fields are required", error: true });
+        }
+
+        const user = await User.find({ email });
+        // console.log("user", user);
+
+        if (user && user.length === 0) {
+            console.log("User not found");
+            return res.status(401).json({ message: "Token is invalid", error: true });
+        }
+
+        // if (user && !user.isActive) {
+        //     console.log("User is not active");
+        //     return res.status(401).json({ message: " User is not active", error: true });
+        // }
+
+        if (!user[0].email) {
+            return res.status(401).json({ message: "User email is required", error: true });
+        }
+
+        if (user[0].email != email) {
+            return res.status(400).json({ message: "Invalid email", error: true });
+        }
+
+        if (user[0].token.value !== token) {
+            return res.status(400).json({ message: "Invalid token", error: true });
+        }
+
+        if (user[0].token.expiry < Date.now()) {
+            return res.status(400).json({ message: "Token expired", error: true });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(password, salt);
+
+        const UpdateUserInfo = await User.findByIdAndUpdate(user[0]._id, { password: passwordHash, "token.value": null, "token.expiry": null }, { new: true });
+
+        res.json({ message: "Password updated successfully", error: false });
+
+    } catch (error) {
+        next(error);
+    }
+};
