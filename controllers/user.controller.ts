@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require("uuid");
 const { sendMail } = require("../mailer/mailerJob");
 require("dotenv").config();
 
-exports.getToken = async (req, res, next) => {
+export const getToken = async (req, res, next) => {
 
     try {
         console.log("Giving User Auth Token");
@@ -26,7 +26,7 @@ exports.getToken = async (req, res, next) => {
 
 }
 
-exports.register = async (req, res, next) => {
+export const register = async (req, res, next) => {
 
     const { email, password } = req.body;
     console.log(req.body);
@@ -97,7 +97,7 @@ exports.register = async (req, res, next) => {
 
 }
 
-exports.logIn = async (req, res, next) => {
+export const logIn = async (req, res, next) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -155,7 +155,7 @@ const maskEmail = (email) => {
 };
 
 
-exports.verify = async (req, res, next) => {
+export const verify = async (req, res, next) => {
     try {
         // console.log("req.payload", req.payload);
         const user = await User.findById(req.payload._id);
@@ -185,7 +185,7 @@ exports.verify = async (req, res, next) => {
 
 
 //Post /auth/newPassword - password change request
-exports.newPassword = async (req, res, next) => {
+export const newPassword = async (req, res, next) => {
     // console.log("token", req.payload)
     // console.log(req.body);
 
@@ -216,7 +216,7 @@ exports.newPassword = async (req, res, next) => {
     }
 };
 
-exports.userInfo = async (req, res, next) => {
+export const userInfo = async (req, res, next) => {
 
     try {
         const user = await User.findById(req.payload._id);
@@ -259,7 +259,7 @@ exports.userInfo = async (req, res, next) => {
 
 
 
-exports.activateUser = async (req, res, next) => {
+export const activateUser = async (req, res, next) => {
     try {
         const user = await User.findById(req.payload._id);
         console.log("user", user);
@@ -289,7 +289,7 @@ exports.activateUser = async (req, res, next) => {
 }
 
 
-exports.reSendActivation = async (req, res, next) => {
+export const reSendActivation = async (req, res, next) => {
     try {
         const user = await User.findById(req.payload._id);
         console.log("user", user);
@@ -319,7 +319,7 @@ exports.reSendActivation = async (req, res, next) => {
     }
 }
 
-exports.sendForgotPasswordEmail = async (req, res, next) => {
+export const sendForgotPasswordEmail = async (req, res, next) => {
 
     try {
         const { email } = req.body;
@@ -369,7 +369,7 @@ exports.sendForgotPasswordEmail = async (req, res, next) => {
     }
 };
 
-exports.resetPassword = async (req, res, next) => {
+export const resetPassword = async (req, res, next) => {
 
     try {
         const { email, password, token } = req.body;
