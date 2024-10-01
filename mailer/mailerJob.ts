@@ -79,7 +79,7 @@ const getEmailsToSend = async () => {
 
 }
 
-const sendJobsMail = async () => {
+export const sendJobsMail = async () => {
 
     const usersWithUnseenJobListings = await getEmailsToSend()
     // console.log(usersWithUnseenJobListings[0].unseenJobListings[0])
@@ -103,7 +103,7 @@ const sendJobsMail = async () => {
 
 }
 
-const sendMail = async (sentoTo, subject, message) => {
+export const sendMail = async (sentoTo, subject, message) => {
 
     try {
 
@@ -121,7 +121,7 @@ const sendMail = async (sentoTo, subject, message) => {
 
 }
 
-module.exports = {
+export default {
     sendJobsMail,
     sendMail
 };
