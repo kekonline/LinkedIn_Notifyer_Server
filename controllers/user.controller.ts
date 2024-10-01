@@ -1,11 +1,14 @@
-const User = require("../models/User.model")
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const { v4: uuidv4 } = require("uuid");
-const { sendMail } = require("../mailer/mailerJob");
-require("dotenv").config();
+import { Request, Response, NextFunction } from 'express';
+import { Model } from 'mongoose';
+import User from '../models/User.model';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid';
+import { sendMail } from '../mailer/mailerJob';
+import dotenv from 'dotenv';
+dotenv.config();
 
-export const getToken = async (req, res, next) => {
+export const getToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 
     try {
         console.log("Giving User Auth Token");
@@ -13,7 +16,7 @@ export const getToken = async (req, res, next) => {
         console.log("newUser", newUser);
 
         const payload = { _id: newUser._id };
-        const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
+        const authToken = jwt.sign(payload, process.env.TOKEN_SECRET as string, {
             algorithm: "HS256",
             expiresIn: "365d",
         });
@@ -26,9 +29,9 @@ export const getToken = async (req, res, next) => {
 
 }
 
-export const register = async (req, res, next) => {
+export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 
-    const { email, password } = req.body;
+    const { email, password } = req.body as { email: string; password: string };
     console.log(req.body);
 
     if (!email || !password) {
@@ -37,7 +40,7 @@ export const register = async (req, res, next) => {
         return;
     }
     try {
-        isEmailDuplicated = await User.findOne({ email });
+        const isEmailDuplicated = await User.findOne({ email });
         if (isEmailDuplicated) {
             res
                 .status(400)
@@ -45,8 +48,8 @@ export const register = async (req, res, next) => {
             return;
         }
 
-        let userId = req.payload._id;
-        isUserAlreadyRegistered = await User.findOne({ _id: userId });
+        let userId = req.payload?._id;
+        const isUserAlreadyRegistered = await User.findOne({ _id: userId });
         if (isUserAlreadyRegistered && isUserAlreadyRegistered.email) {
             res
                 .status(400)
@@ -97,7 +100,7 @@ export const register = async (req, res, next) => {
 
 }
 
-export const logIn = async (req, res, next) => {
+export const logIn = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -134,7 +137,7 @@ export const logIn = async (req, res, next) => {
         const payload = {
             _id: logingInUser._id,
         };
-        const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
+        const authToken = jwt.sign(payload, process.env.TOKEN_SECRET as string, {
             algorithm: "HS256",
             expiresIn: "365d",
         });
@@ -145,7 +148,7 @@ export const logIn = async (req, res, next) => {
 
 }
 
-const maskEmail = (email) => {
+const maskEmail = (email: string) => {
 
     const [localPart, domainPart] = email.split('@');
     const visiblePart = localPart.slice(0, 4);
@@ -155,15 +158,16 @@ const maskEmail = (email) => {
 };
 
 
-export const verify = async (req, res, next) => {
+export const verify = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         // console.log("req.payload", req.payload);
-        const user = await User.findById(req.payload._id);
+        const user = await User.findById(req.payload?._id);
         // console.log("user", user);
         // 
         if (!user) {
             console.log("User not found");
-            return res.status(401).json({ message: "Token is invalid", error: true });
+            res.status(401).json({ message: "Token is invalid", error: true });
+            return
         }
 
         const { email, getNotifications, isActive } = user;
@@ -185,13 +189,20 @@ export const verify = async (req, res, next) => {
 
 
 //Post /auth/newPassword - password change request
-export const newPassword = async (req, res, next) => {
+export const newPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     // console.log("token", req.payload)
     // console.log(req.body);
 
     const { oldPassword, newPassword } = req.body;
     try {
-        const userInfo = await User.findById(req.payload._id);
+        const userInfo = await User.findById(req.payload?._id);
+
+        if (!userInfo) {
+            res.json({ message: "User not found", error: true });
+            return;
+        }
+
+
         const isPasswordCorrect = await bcrypt.compare(
             oldPassword,
             userInfo.password
@@ -203,7 +214,7 @@ export const newPassword = async (req, res, next) => {
             const salt = await bcrypt.genSalt(10);
             const passwordHash = await bcrypt.hash(newPassword, salt);
             const UpdateUserInfo = await User.findByIdAndUpdate(
-                req.payload._id,
+                req.payload?._id,
                 { password: passwordHash },
                 { new: true }
             );
@@ -216,24 +227,27 @@ export const newPassword = async (req, res, next) => {
     }
 };
 
-export const userInfo = async (req, res, next) => {
+export const userInfo = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 
     try {
-        const user = await User.findById(req.payload._id);
+        const user = await User.findById(req.payload?._id);
         console.log("user", user);
 
         if (!user) {
             console.log("User not found");
-            return res.status(401).json({ message: "Token is invalid", error: true });
+            res.status(401).json({ message: "Token is invalid", error: true });
+            return
         }
 
         if (user && !user.isActive) {
             console.log("User is not active");
-            return res.status(401).json({ message: " User is not active", error: true });
+            res.status(401).json({ message: " User is not active", error: true });
+            return
         }
 
         if (!user.email) {
-            return res.status(401).json({ message: "User email is required", error: true });
+            res.status(401).json({ message: "User email is required", error: true });
+            return
         }
 
         const { getNotifications } = req.body;
@@ -243,7 +257,7 @@ export const userInfo = async (req, res, next) => {
 
 
         const UpdateUserInfo = await User.findByIdAndUpdate(
-            req.payload._id,
+            req.payload?._id,
             { getNotifications: getNotifications },
             { new: true }
         );
@@ -259,26 +273,29 @@ export const userInfo = async (req, res, next) => {
 
 
 
-export const activateUser = async (req, res, next) => {
+export const activateUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const user = await User.findById(req.payload._id);
+        const user = await User.findById(req.payload?._id);
         console.log("user", user);
 
         if (!user) {
             console.log("User not found");
-            return res.status(401).json({ message: "Token is invalid", error: true });
+            res.status(401).json({ message: "Token is invalid", error: true });
+            return
         }
 
         if (!user.email) {
-            return res.status(401).json({ message: "User email is required", error: true });
+            res.status(401).json({ message: "User email is required", error: true });
+            return
         }
 
         if (user && user.isActive) {
             console.log("User is already active");
-            return res.status(401).json({ message: "User is already active", error: true });
+            res.status(401).json({ message: "User is already active", error: true });
+            return
         }
         const UpdateUserInfo = await User.findByIdAndUpdate(
-            req.payload._id, { isActive: true, "token.value": null }, { new: true }
+            req.payload?._id, { isActive: true, "token.value": null }, { new: true }
         );
         res.json({ message: "User activated successfully", error: false });
     } catch (error) {
@@ -289,22 +306,25 @@ export const activateUser = async (req, res, next) => {
 }
 
 
-export const reSendActivation = async (req, res, next) => {
+export const reSendActivation = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const user = await User.findById(req.payload._id);
+        const user = await User.findById(req.payload?._id);
         console.log("user", user);
 
         if (!user) {
             console.log("User not found");
-            return res.status(401).json({ message: "Token is invalid", error: true });
+            res.status(401).json({ message: "Token is invalid", error: true });
+            return
         }
         if (user && user.isActive) {
             console.log("User is already active");
-            return res.status(401).json({ message: "User is already active", error: true });
+            res.status(401).json({ message: "User is already active", error: true });
+            return
         }
 
         if (!user.email) {
-            return res.status(401).json({ message: "User email is required", error: true });
+            res.status(401).json({ message: "User email is required", error: true });
+            return
         }
 
         const message = `<p>Hi there ${user.email}!</p>
@@ -319,13 +339,13 @@ export const reSendActivation = async (req, res, next) => {
     }
 }
 
-export const sendForgotPasswordEmail = async (req, res, next) => {
-
+export const sendForgotPasswordEmail = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { email } = req.body;
 
         if (!email) {
-            return res.status(400).json({ message: "All fields are required", error: true });
+            res.status(400).json({ message: "All fields are required", error: true });
+            return
         }
 
         const user = await User.find({ email: email });
@@ -333,12 +353,14 @@ export const sendForgotPasswordEmail = async (req, res, next) => {
 
         if (user && user.length === 0) {
             console.log("User not found");
-            return res.status(401).json({ message: "Token is invalid", error: true });
+            res.status(401).json({ message: "Token is invalid", error: true });
+            return
         }
 
 
         if (!user[0].email) {
-            return res.status(401).json({ message: "User email is required", error: true });
+            res.status(401).json({ message: "User email is required", error: true });
+            return
         }
         // if (user && !user.isActive) {
         //     console.log("User is not active");
@@ -346,7 +368,8 @@ export const sendForgotPasswordEmail = async (req, res, next) => {
         // }
 
         if (user[0].email !== email) {
-            return res.status(400).json({ message: "Invalid email", error: true });
+            res.status(400).json({ message: "Invalid email", error: true });
+            return
         }
 
         const activationToken = uuidv4();
@@ -369,13 +392,14 @@ export const sendForgotPasswordEmail = async (req, res, next) => {
     }
 };
 
-export const resetPassword = async (req, res, next) => {
+export const resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 
     try {
         const { email, password, token } = req.body;
 
         if (!email || !password || !token) {
-            return res.status(400).json({ message: "All fields are required", error: true });
+            res.status(400).json({ message: "All fields are required", error: true });
+            return
         }
 
         const user = await User.find({ email });
@@ -383,7 +407,8 @@ export const resetPassword = async (req, res, next) => {
 
         if (user && user.length === 0) {
             console.log("User not found");
-            return res.status(401).json({ message: "Token is invalid", error: true });
+            res.status(401).json({ message: "Token is invalid", error: true });
+            return
         }
 
         // if (user && !user.isActive) {
@@ -392,19 +417,23 @@ export const resetPassword = async (req, res, next) => {
         // }
 
         if (!user[0].email) {
-            return res.status(401).json({ message: "User email is required", error: true });
+            res.status(401).json({ message: "User email is required", error: true });
+            return
         }
 
         if (user[0].email != email) {
-            return res.status(400).json({ message: "Invalid email", error: true });
+            res.status(400).json({ message: "Invalid email", error: true });
+            return
         }
 
         if (user[0].token.value !== token) {
-            return res.status(400).json({ message: "Invalid token", error: true });
+            res.status(400).json({ message: "Invalid token", error: true });
+            return
         }
 
-        if (user[0].token.expiry < Date.now()) {
-            return res.status(400).json({ message: "Token expired", error: true });
+        if (user[0].token.expiry.getTime() < Date.now()) {
+            res.status(400).json({ message: "Token expired", error: true });
+            return
         }
 
         const salt = await bcrypt.genSalt(10);
