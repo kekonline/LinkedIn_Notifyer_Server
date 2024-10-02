@@ -1,8 +1,9 @@
-const SearchTerm = require('../models/SearchTerm.model');
-const User = require("../models/User.model")
+import { Request, Response, NextFunction } from 'express';
+import SearchTerm from '../models/SearchTerm.model';
+import User from '../models/User.model';
 
-exports.getSearchTerm = async (req, res, next) => {
-    const userId = req.payload._id;
+export const getSearchTerm = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const userId = (req as Request & { payload?: { _id: string } }).payload?._id;
     try {
         const searchTerms = await SearchTerm.find({ users: userId }).select('-users').sort({ term: 1 });
         res.status(200).json({ searchTerms, error: false });
@@ -11,9 +12,8 @@ exports.getSearchTerm = async (req, res, next) => {
     }
 };
 
-// Handler for creating a new user
-exports.createSearchTerm = async (req, res, next) => {
-    const userId = req.payload._id;
+export const createSearchTerm = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const userId = (req as Request & { payload?: { _id: string } }).payload?._id;
     const { term, location, jobType } = req.body;
 
     if (!term || !location) {
@@ -22,8 +22,6 @@ exports.createSearchTerm = async (req, res, next) => {
     }
 
     try {
-        // serchTermExists = await SearchTerm.findOne({ term: term.trim().toLowerCase(), location: location.trim().toLowerCase(), jobType: jobType ? jobType.trim().toLowerCase() : jobType });
-
         const updatedSearchTerm = await SearchTerm.findOneAndUpdate(
             {
                 term: term.trim().toLowerCase(),
@@ -42,7 +40,6 @@ exports.createSearchTerm = async (req, res, next) => {
         const searchTermId = updatedSearchTerm ? updatedSearchTerm._id : null;
 
         if (searchTermId) {
-            // Add the searchTermId to the user's searchTerms
             await User.findByIdAndUpdate(
                 userId,
                 {
@@ -57,10 +54,16 @@ exports.createSearchTerm = async (req, res, next) => {
     }
 };
 
-exports.deleteSearchTerm = async (req, res, next) => {
+export const deleteSearchTerm = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const searchTermToDelete = req.params.searchTermId;
-    const userId = req.payload._id;
+    const userId = (req as Request & { payload?: { _id: string } }).payload?._id;
     try {
+        const searchTerm = await SearchTerm.findById(searchTermToDelete);
+        if (!searchTerm) {
+            res.status(404).json({ message: "Search term not found", error: true });
+            return
+        }
+
         await SearchTerm.findOneAndUpdate(
             {
                 _id: searchTermToDelete
@@ -79,10 +82,8 @@ exports.deleteSearchTerm = async (req, res, next) => {
             }
         );
 
-
-
-
         res.status(200).json({ message: "Search term deleted successfully", error: false });
+
     } catch (error) {
         next(error);
     }

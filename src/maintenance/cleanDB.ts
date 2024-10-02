@@ -1,7 +1,7 @@
-const User = require("../models/User.model");
-const SearchTerm = require("../models/SearchTerm.model");
+import User from "../models/User.model";
+import SearchTerm from "../models/SearchTerm.model";
 
-const deleteUsersWithoutEmailAndOldCreatedDate = async () => {
+export const deleteUsersWithoutEmailAndOldCreatedDate = async () => {
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
@@ -33,8 +33,4 @@ const deleteUsersWithoutEmailAndOldCreatedDate = async () => {
     } catch (error) {
         console.error("Error deleting users:", error);
     }
-};
-
-module.exports = {
-    deleteUsersWithoutEmailAndOldCreatedDate
 };

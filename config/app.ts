@@ -3,8 +3,8 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import errorHandler from '../middlewares/errors';
-import indexRoutes from '../routes/index.routes';
+import errorHandler from '../src/middlewares/errors';
+import indexRoutes from '../src/routes/index.routes';
 
 // Load environment variables from .env file
 dotenv.config();

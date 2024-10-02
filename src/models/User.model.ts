@@ -8,8 +8,9 @@ interface SeenJobListing {
 }
 
 interface User extends Document {
+    _id: Types.ObjectId;
     email?: string; // Optional due to sparse
-    password: string;
+    password?: string;
     searchTerms: Types.ObjectId[]; // Array of references to SearchTerm
     seenJobListings: SeenJobListing[];
     getNotifications: boolean;
@@ -57,7 +58,7 @@ const userSchema = new Schema<User>(
         },
         token: {
             value: String,
-            expiry: Date // Fixed typo here as well
+            expiry: Date
         },
         isActive: {
             type: Boolean,
@@ -69,6 +70,5 @@ const userSchema = new Schema<User>(
     }
 );
 
-// Create and export the User model
 const UserModel = model<User>('User', userSchema);
 export default UserModel;
