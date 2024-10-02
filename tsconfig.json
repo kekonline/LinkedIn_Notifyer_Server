@@ -109,16 +109,8 @@
   },
   "include": [
     "config/**/*.ts",       
-    "controllers/**/*.ts", 
-    "mailer/**/*.ts",       
-    "maintenance/**/*.ts",  
-    "middleware/**/*.ts",  
-    "models/**/*.ts",      
-    "routes/**/*.ts",      
-    "maintenance/**/*.ts",  
-    "scrapers/**/*.ts",    
-    "server.js",        
-    "@types/**/*",   
+    "src/**/*",
+    "src/types/**/*.d.ts"
     // "**/*.js"               // Optionally include all JavaScript files in the project
   ],
   "exclude": ["node_modules"]

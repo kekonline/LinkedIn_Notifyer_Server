@@ -39,28 +39,34 @@ const authentication = (req: Request, res: Response, next: NextFunction) => {
 
 // Middleware to check user existence
 const checkUserExistence = async (req: Request, res: Response, next: NextFunction) => {
-    console.log('Request payload:', req.payload); // Log for debugging
 
     try {
+
+        const _id = (req as Request & { payload?: { _id: string } }).payload?._id;
+
         // Check if payload exists before accessing _id
-        if (!req.payload) {
-            return res.status(401).json({ message: 'No token or payload found' });
+        if (!_id) {
+            res.status(401).json({ message: 'No token or payload found' });
+            return
         }
 
-        const { _id } = req.payload; // Safe to access _id now
+        console.log('Request payload:', _id); // Log for debugging
+        // const _id = req.payload; // Safe to access _id now
         const user = await User.findById(_id);
 
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            res.status(404).json({ message: 'User not found' });
+            return
         }
 
         // Attach user to the request if needed
         req.user = user;
-
         next();
+        return
     } catch (error) {
         console.error('Error verifying user:', error);
-        return res.status(500).json({ message: 'Error verifying user', error });
+        res.status(500).json({ message: 'Error verifying user', error });
+        return
     }
 };
 

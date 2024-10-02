@@ -1,7 +1,8 @@
-const nodemailer = require('nodemailer');
-const User = require("../models/User.model")
-const SearchTerm = require('../models/SearchTerm.model');
-require("dotenv").config();
+import nodemailer from 'nodemailer';
+import User from "../models/User.model";
+import SearchTerm from '../models/SearchTerm.model';
+import dotenv from 'dotenv';
+
 // const JobListing = require('../models/JobListing.model');
 
 const transporter = nodemailer.createTransport({
@@ -12,7 +13,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-const composesedHTML = (unseenJobListings) => {
+const composesedHTML = (unseenJobListings: typeof JobListing[]) => {
     let message = "";
 
     message += `<p>Hi there!</p>`;
@@ -27,7 +28,7 @@ const composesedHTML = (unseenJobListings) => {
     return message;
 };
 
-const mailOptions = (sendTo, subject, message) => ({
+const mailOptions = (sendTo: string, subject: string, message: string) => ({
     from: process.env.GMAILUSER,
     to: sendTo,
     subject: subject,
@@ -35,20 +36,25 @@ const mailOptions = (sendTo, subject, message) => ({
 });
 
 
-const getEmailsToSend = async () => {
+const getEmailsToSend = async (): Promise<{ email: string, unseenJobListings: typeof JobListing[] }[]> => {
 
     try {
         const users = await User.find({ email: { $exists: true, $ne: null }, getNotifications: true })
             .select('email seenJobListings')
             .sort('email'); // Sort users by email
 
-        if (!users || users.length === 0) {
+        if (!users || users.length === 0 || users && users.length) {
             return [];
         }
 
         let usersWithUnseenJobListings = [];
 
         for (const user of users) {
+
+            if (!user.email) {
+                continue
+            }
+
             const searchTerms = await SearchTerm.find({ users: user._id })
                 .populate({
                     path: 'jobListings',
@@ -75,6 +81,7 @@ const getEmailsToSend = async () => {
 
     } catch (error) {
         console.log(error)
+        return [];
     }
 
 }
@@ -103,7 +110,7 @@ export const sendJobsMail = async () => {
 
 }
 
-export const sendMail = async (sentoTo, subject, message) => {
+export const sendMail = async (sentoTo: string, subject: string, message: string) => {
 
     try {
 

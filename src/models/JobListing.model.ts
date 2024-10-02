@@ -1,6 +1,19 @@
-const { Schema, model } = require("mongoose");
+import { Schema, model, Document, Types } from 'mongoose';
 
-const jobListingSchema = new Schema(
+interface JobListing extends Document {
+    _id: Types.ObjectId;
+    title: string;
+    company: string;
+    description: string;
+    jobURL: string;
+    applyURL?: string;
+    searchTerms: Types.ObjectId[];
+    scrapeRetries: number;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const jobListingSchema = new Schema<JobListing>(
     {
         title: {
             type: String,
@@ -33,5 +46,5 @@ const jobListingSchema = new Schema(
     }
 );
 
-const JobListing = model("JobListing", jobListingSchema);
-module.exports = JobListing;
+const JobListing = model<JobListing>('JobListing', jobListingSchema);
+export default JobListing;

@@ -48,7 +48,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
             return;
         }
 
-        let userId = req.payload?._id;
+        let userId = (req as Request & { payload?: { _id: string } }).payload?._id;
         const isUserAlreadyRegistered = await User.findOne({ _id: userId });
         if (isUserAlreadyRegistered && isUserAlreadyRegistered.email) {
             res
@@ -117,12 +117,17 @@ export const logIn = async (req: Request, res: Response, next: NextFunction): Pr
             return;
         }
 
+        if (!logingInUser || !logingInUser.email || !logingInUser.password) {
+            res
+                .status(400)
+                .json({ message: "Email not registered", error: true });
+            return;
+        }
 
         const isPasswordCorrect = await bcrypt.compare(
             password,
             logingInUser.password
         );
-
         // const isPasswordCorrect = password === logingInUser.password;
 
         if (!isPasswordCorrect) {
@@ -201,6 +206,18 @@ export const newPassword = async (req: Request, res: Response, next: NextFunctio
             res.json({ message: "User not found", error: true });
             return;
         }
+
+        if (!userInfo.password) {
+
+            res.json({ message: "User not found", error: true });
+            return;
+        }
+
+        if (!oldPassword || !newPassword) {
+            res.json({ message: "All fields are required", error: true });
+            return;
+        }
+
 
 
         const isPasswordCorrect = await bcrypt.compare(

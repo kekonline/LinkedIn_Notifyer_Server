@@ -9,6 +9,6 @@ interface JwtPayload {
 // Declare the module to augment the existing Express types
 declare module 'express' {
     export interface Request {
-        payload?: JwtPayload;
+        payload?: JwtPayload | undefined;
     }
 }

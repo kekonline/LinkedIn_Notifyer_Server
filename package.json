@@ -41,6 +41,7 @@
     "@types/mongoose": "^5.11.96",
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.7.4",
+    "@types/nodemailer": "^6.4.16",
     "@types/uuid": "^10.0.0",
     "cross-env": "^7.0.3",
     "ts-node": "^10.9.2",

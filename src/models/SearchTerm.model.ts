@@ -1,6 +1,17 @@
-const { Schema, model } = require("mongoose");
+import { Schema, model, Document, Types } from 'mongoose';
 
-const searchTermSchema = new Schema(
+interface SearchTerm extends Document {
+    _id: Types.ObjectId;
+    term: string;
+    location: string;
+    jobType?: 'Remote' | 'Hybrid' | 'On-site' | '';
+    users: Types.ObjectId[];
+    jobListings: Types.ObjectId[];
+    lastScraped?: Date;
+    URL?: string;
+}
+
+const searchTermSchema = new Schema<SearchTerm>(
     {
         term: {
             type: String,
@@ -31,8 +42,7 @@ const searchTermSchema = new Schema(
     }
 );
 
-// Create a compound index to ensure unique combination of term, location, and jobType
 searchTermSchema.index({ term: 1, location: 1, jobType: 1 }, { unique: true });
 
-const SearchTerm = model("SearchTerm", searchTermSchema);
-module.exports = SearchTerm;
+const SearchTerm = model<SearchTerm>('SearchTerm', searchTermSchema);
+export default SearchTerm;

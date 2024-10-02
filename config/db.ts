@@ -1,9 +1,9 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
-const MONGO_URI =
+export const MONGO_URI =
   process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/LinkedIn_Notifyer";
 
-const connectToMongo = async () => {
+export const connectToMongo = async () => {
   try {
     const db = await mongoose.connect(MONGO_URI);
     const dbName = db.connections[0].name;
@@ -17,5 +17,3 @@ const connectToMongo = async () => {
 
 // Call the function to connect
 connectToMongo();
-
-module.exports = connectToMongo;
