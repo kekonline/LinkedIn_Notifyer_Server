@@ -164,9 +164,10 @@ const maskEmail = (email: string) => {
 
 
 export const verify = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const userId = (req as Request & { payload?: { _id: string } }).payload?._id;
     try {
         // console.log("req.payload", req.payload);
-        const user = await User.findById(req.payload?._id);
+        const user = await User.findById(userId);
         // console.log("user", user);
         // 
         if (!user) {
@@ -198,9 +199,11 @@ export const newPassword = async (req: Request, res: Response, next: NextFunctio
     // console.log("token", req.payload)
     // console.log(req.body);
 
+    const userId = (req as Request & { payload?: { _id: string } }).payload?._id;
+
     const { oldPassword, newPassword } = req.body;
     try {
-        const userInfo = await User.findById(req.payload?._id);
+        const userInfo = await User.findById(userId);
 
         if (!userInfo) {
             res.json({ message: "User not found", error: true });
@@ -231,7 +234,7 @@ export const newPassword = async (req: Request, res: Response, next: NextFunctio
             const salt = await bcrypt.genSalt(10);
             const passwordHash = await bcrypt.hash(newPassword, salt);
             const UpdateUserInfo = await User.findByIdAndUpdate(
-                req.payload?._id,
+                userId,
                 { password: passwordHash },
                 { new: true }
             );
@@ -247,7 +250,8 @@ export const newPassword = async (req: Request, res: Response, next: NextFunctio
 export const userInfo = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 
     try {
-        const user = await User.findById(req.payload?._id);
+        const userId = (req as Request & { payload?: { _id: string } }).payload?._id;
+        const user = await User.findById(userId);
         console.log("user", user);
 
         if (!user) {
@@ -274,7 +278,7 @@ export const userInfo = async (req: Request, res: Response, next: NextFunction):
 
 
         const UpdateUserInfo = await User.findByIdAndUpdate(
-            req.payload?._id,
+            userId,
             { getNotifications: getNotifications },
             { new: true }
         );
@@ -292,7 +296,8 @@ export const userInfo = async (req: Request, res: Response, next: NextFunction):
 
 export const activateUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const user = await User.findById(req.payload?._id);
+        const userId = (req as Request & { payload?: { _id: string } }).payload?._id;
+        const user = await User.findById(userId);
         console.log("user", user);
 
         if (!user) {
@@ -312,7 +317,7 @@ export const activateUser = async (req: Request, res: Response, next: NextFuncti
             return
         }
         const UpdateUserInfo = await User.findByIdAndUpdate(
-            req.payload?._id, { isActive: true, "token.value": null }, { new: true }
+            userId, { isActive: true, "token.value": null }, { new: true }
         );
         res.json({ message: "User activated successfully", error: false });
     } catch (error) {
@@ -325,7 +330,8 @@ export const activateUser = async (req: Request, res: Response, next: NextFuncti
 
 export const reSendActivation = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const user = await User.findById(req.payload?._id);
+        const userId = (req as Request & { payload?: { _id: string } }).payload?._id;
+        const user = await User.findById(userId);
         console.log("user", user);
 
         if (!user) {

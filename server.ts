@@ -1,9 +1,9 @@
-const app = require("./config/app");
-const interval = 5 * 60 * 1000; // 5 minutes in milliseconds
+import app from "./config/app";
+import { scrapeJobListing, scrapeJobDescription } from "./src/scrapers/scrapeJob";
+import { sendJobsMail } from "./src/mailer/mailerJob";
+import { deleteUsersWithoutEmailAndOldCreatedDate } from "./src/maintenance/cleanDB";
 
-const { scrapeJobListing, scrapeJobDescription } = require("./scrapers/scrapeJob");
-const { sendJobsMail } = require("./mailer/mailerJob");
-const { deleteUsersWithoutEmailAndOldCreatedDate } = require("./maintenance/cleanDB");
+const interval = 5 * 60 * 1000; // 5 minutes in milliseconds
 let isRunning = false;
 
 // ℹ️ Set the PORT and start the server
@@ -25,9 +25,9 @@ async function runScrapingTasks() {
     try {
         console.log("Starting scraping tasks...");
         await scrapeJobListing();
-        // await scrapeJobDescription();
-        // await sendJobsMail();
-        // await deleteUsersWithoutEmailAndOldCreatedDate();
+        await scrapeJobDescription();
+        await sendJobsMail();
+        await deleteUsersWithoutEmailAndOldCreatedDate();
         console.log("Scraping tasks completed.");
     } catch (error) {
         console.error("An error occurred during scraping tasks:", error);

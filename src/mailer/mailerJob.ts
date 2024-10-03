@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import User from "../models/User.model";
+import JobListing from "../models/JobListing.model";
 import SearchTerm from '../models/SearchTerm.model';
 import dotenv from 'dotenv';
 
@@ -13,7 +14,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-const composesedHTML = (unseenJobListings: typeof JobListing[]) => {
+const composesedHTML = (unseenJobListings: JobListing[]) => {
     let message = "";
 
     message += `<p>Hi there!</p>`;
@@ -36,37 +37,40 @@ const mailOptions = (sendTo: string, subject: string, message: string) => ({
 });
 
 
-const getEmailsToSend = async (): Promise<{ email: string, unseenJobListings: typeof JobListing[] }[]> => {
-
+const getEmailsToSend = async (): Promise<{ email: string, unseenJobListings: JobListing[] }[]> => {
     try {
         const users = await User.find({ email: { $exists: true, $ne: null }, getNotifications: true })
             .select('email seenJobListings')
             .sort('email'); // Sort users by email
 
-        if (!users || users.length === 0 || users && users.length) {
+        if (!users || users.length === 0) {
             return [];
         }
 
-        let usersWithUnseenJobListings = [];
+        let usersWithUnseenJobListings: { email: string, unseenJobListings: JobListing[] }[] = [];
 
         for (const user of users) {
-
             if (!user.email) {
-                continue
+                continue;
             }
 
+            // Find search terms and populate full jobListing documents (not just ObjectId references)
             const searchTerms = await SearchTerm.find({ users: user._id })
                 .populate({
                     path: 'jobListings',
-                    select: '-users'
+                    model: 'JobListing', // Ensure this is the correct model
+                    select: '-users' // Exclude unnecessary fields if needed
                 });
 
-            let jobListings = searchTerms.flatMap(term => term.jobListings);
+            // Flatten job listings into a single array
+            let jobListings: JobListing[] | [] = searchTerms.flatMap(term => term.jobListings as unknown as JobListing[]);
 
+            // Get the user's seen job IDs
             const seenJobIds = user.seenJobListings
                 .filter(item => item.seen)
                 .map(item => item.jobListing.toString());
 
+            // Filter unseen job listings
             const unseenJobListings = jobListings.filter(job => !seenJobIds.includes(job._id.toString()));
 
             if (unseenJobListings.length > 0) {
@@ -77,14 +81,13 @@ const getEmailsToSend = async (): Promise<{ email: string, unseenJobListings: ty
             }
         }
 
-        return usersWithUnseenJobListings
+        return usersWithUnseenJobListings;
 
     } catch (error) {
-        console.log(error)
+        console.log(error);
         return [];
     }
-
-}
+};
 
 export const sendJobsMail = async () => {
 
