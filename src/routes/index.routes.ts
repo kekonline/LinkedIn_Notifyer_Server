@@ -1,19 +1,18 @@
 import { Router } from "express";
 import { authentication, checkUserExistence } from "../middlewares/authentication";
-import searchTermRouter from "./searchTerm.routes"
-import jobRouter from "./jobListing.routes"
-
+import searchTermRouter from "./searchTerm.routes";
+import jobRouter from "./jobListing.routes";
+import authRouter from "./auth.routes";  // Changed from require to import
 
 const router = Router();
 
-// login, signin, verify
-const authRouter = require("./auth.routes")
-router.use("/auth", authRouter)
+// Auth routes
+router.use("/auth", authRouter);
 
-// searchTerm routes
-router.use("/searchterm", authentication, checkUserExistence, searchTermRouter)
+// SearchTerm routes
+router.use("/searchterm", authentication, checkUserExistence, searchTermRouter);
 
-// job routes
-router.use("/job", authentication, checkUserExistence, jobRouter)
+// Job routes
+router.use("/job", authentication, checkUserExistence, jobRouter);
 
 export default router;
