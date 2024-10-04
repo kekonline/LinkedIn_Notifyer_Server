@@ -1,10 +1,14 @@
-require("dotenv").config();
-const axios = require('axios');
-const { URL } = require('url');
-const puppeteer = require('puppeteer-extra');
-const stealthPlugin = require('puppeteer-extra-plugin-stealth');
-const JobListing = require('../models/JobListing.model');
-const SearchTerm = require('../models/SearchTerm.model');
+import dotenv from 'dotenv';
+import axios from 'axios';
+import { URL } from 'url';
+import puppeteer from 'puppeteer-extra';
+import stealthPlugin from 'puppeteer-extra-plugin-stealth';
+import JobListing from '../models/JobListing.model';
+import SearchTerm from '../models/SearchTerm.model';
+import { Page } from 'puppeteer';
+import { InsertOneResult } from 'mongodb';
+
+dotenv.config();
 
 const delay = async (min = 3000, max = 4000, randomIncrease = 0) => {
     if (randomIncrease) {
@@ -50,12 +54,12 @@ const initializeBrowserAndPage = async () => {
         const page = pages[0];
         await page.setJavaScriptEnabled(true);
         await page.evaluateOnNewDocument(() => {
-            delete navigator.__proto__.webdriver;
+            delete (navigator as any).__proto__.webdriver;
         });
 
         await page.authenticate({
-            username: process.env.PROXYUSER,
-            password: process.env.PROXYPASS,
+            username: process.env.PROXYUSER as string,
+            password: process.env.PROXYPASS as string,
         });
 
         // getPublicIP();
@@ -64,11 +68,11 @@ const initializeBrowserAndPage = async () => {
     } catch (error) {
 
         console.error('Error Initializing Browser And Page:', error);
-        throw new Error('Error Initializing Browser And Page:', error);
+        throw new Error(`Error Initializing Browser And Page: ${error}`);
     }
 }
 
-const goToURL = async (page, url) => {
+const goToURL = async (page: Page, url: string): Promise<boolean> => {
     console.log('Navigating To URL:', url);
     const maxRetries = 3;
     let retries = 0;
@@ -102,21 +106,40 @@ const goToURL = async (page, url) => {
 };
 
 
-const acceptCookies = async (page) => {
+const acceptCookies = async (page: Page): Promise<boolean> => {
     console.log('Checking for Cookie Button:');
 
     await delay();
     const cookieButton = await page.$('button.artdeco-global-alert-action');
     if (!cookieButton) {
         console.log('No Cookie Button Found');
-        return;
+        return false;
     }
 
     console.log('Accepting Cookies');
     await cookieButton.click();
+    return true
+
+    // console.log('Checking for Cookie Button:');
+    // try {
+    //     await delay();
+    //     const cookieButton = await page.$('button.artdeco-global-alert-action');
+    //     if (!cookieButton) {
+    //         console.log('No Cookie Button Found');
+    //         return false;
+    //     }
+
+    //     console.log('Accepting Cookies');
+    //     await cookieButton.click();
+    //     return true
+    // } catch (error) {
+    //     throw new Error(`Error Accepting Cookies: ${error}`);
+    // }
+
+
 };
 
-const insertJob = async (page, jobDescription) => {
+const insertJob = async (page: Page, jobDescription: string): Promise<boolean> => {
     try {
         console.log('Set Job');
         await delay(4000, 5000);
@@ -134,11 +157,11 @@ const insertJob = async (page, jobDescription) => {
         await page.keyboard.press('Enter');
         return false
     } catch (error) {
-        throw new Error('Error Inserting Job:', error);
+        throw new Error(`Error Inserting Job: ${error}`);
     }
 }
 
-const insertCountry = async (page, country) => {
+const insertCountry = async (page: Page, country: string): Promise<boolean> => {
     try {
         console.log('Set Country');
         await delay(4000, 5000);
@@ -167,13 +190,13 @@ const insertCountry = async (page, country) => {
 
         return false
     } catch (error) {
-        throw new Error('Error Inserting Country:', error);
+        throw new Error(`Error Inserting Country: ${error}`);
     }
 
 
 }
 
-const setWorkType = async (page, jobType) => {
+const setWorkType = async (page: Page, jobType: string): Promise<[boolean, boolean | null]> => {
     try {
 
         let jobcode = '';
@@ -206,11 +229,11 @@ const setWorkType = async (page, jobType) => {
         await page.locator('button.filter__submit-button[data-tracking-control-name="public_jobs_f_WT"]').click();
         return [false, true]
     } catch (error) {
-        throw new Error(`Error Setting ${jobType} Work:`, error);
+        throw new Error(`Error Setting ${jobType} Work: ${error}`);
     }
 }
 
-const setJobsLast24Hours = async (page) => {
+const setJobsLast24Hours = async (page: Page) => {
     try {
         console.log('Set Last 24 Hour Jobs');
         await delay(4000, 5000);
@@ -229,11 +252,11 @@ const setJobsLast24Hours = async (page) => {
         await page.locator('button.filter__submit-button[data-tracking-control-name="public_jobs_f_TPR"]').click();
         return [false, true]
     } catch (error) {
-        throw new Error('Error Setting Last 24 Hour Jobs:', error);
+        throw new Error(`Error Setting Last 24 Hour Jobs: ${error}`);
     }
 }
 
-const getJobListingData = async (page) => {
+const getJobListingData = async (page: Page) => {
     console.log('Scraping Job Listing');
     try {
         await delay(4000, 5000);
@@ -243,27 +266,32 @@ const getJobListingData = async (page) => {
         }
         const gotData = await page.evaluate(() => {
             const liElements = document.querySelectorAll('section.two-pane-serp-page__results-list > ul.jobs-search__results-list > li');
+
             const result = Array.from(liElements).map(li => {
                 const card = li.querySelector('div.base-card');
+                const anchorElement = card?.querySelector('a.base-card__full-link') as HTMLAnchorElement | null;
+                const imgElement = card?.querySelector('img.artdeco-entity-image') as HTMLImageElement | null;
+
                 return {
-                    title: card?.querySelector('h3.base-search-card__title')?.textContent.trim() || null,
-                    company: card?.querySelector('h4.base-search-card__subtitle a')?.textContent.trim() || null,
-                    location: card?.querySelector('span.job-search-card__location')?.textContent.trim() || null,
+                    title: card?.querySelector('h3.base-search-card__title')?.textContent?.trim() || null,
+                    company: card?.querySelector('h4.base-search-card__subtitle a')?.textContent?.trim() || null,
+                    location: card?.querySelector('span.job-search-card__location')?.textContent?.trim() || null,
                     datePosted: card?.querySelector('time.job-search-card__listdate--new')?.getAttribute('datetime') || null,
-                    jobURL: card?.querySelector('a.base-card__full-link')?.href || null,
-                    companyLogo: card?.querySelector('img.artdeco-entity-image')?.src || null
+                    jobURL: anchorElement?.href || null,
+                    companyLogo: imgElement?.src || null
                 };
             });
+
             return result;
         });
         console.log('Scraping Job Listing Done Got: ', gotData && gotData.length ? gotData.length : 0);
         return gotData;
     } catch (error) {
-        throw new Error('Error Getting Data:', error);
+        throw new Error(`Error Getting Data: ${error}`);
     }
 }
 
-const getJobDescriptionData = async (page) => {
+const getJobDescriptionData = async (page: Page) => {
     console.log('Scraping Description');
     try {
         await delay(4000, 5000);
@@ -280,13 +308,13 @@ const getJobDescriptionData = async (page) => {
         });
         return [false, gotData];
     } catch (error) {
-        throw new Error('Error Getting Data:', error);
+        throw new Error(`Error Getting Data: ${error}`);
     }
 }
 
-const saveToDBJobListing = async (scrapedJobListings, searchTermId) => {
+const saveToDBJobListing = async (scrapedJobListings: JobListing[], searchTermId: string) => {
     const joblListingsForDB = scrapedJobListings.filter(jobListing => jobListing.jobURL).map(jobListing => {
-        const { title, company, location, jobURL } = jobListing;
+        const { title, company,/* location,*/ jobURL } = jobListing;
 
         if (!jobURL) return;
 
@@ -298,7 +326,7 @@ const saveToDBJobListing = async (scrapedJobListings, searchTermId) => {
                     $set: {
                         title: title ? Buffer.from(title, 'utf-8').toString('utf-8') : null,
                         company: company ? Buffer.from(company, 'utf-8').toString('utf-8') : null,
-                        location: location ? Buffer.from(location, 'utf-8').toString('utf-8') : null,
+                        // location: location ? Buffer.from(location, 'utf-8').toString('utf-8') : null,
                         jobURL: simplifiedURL,
                         scrapeRetries: 0
                     },
@@ -309,15 +337,25 @@ const saveToDBJobListing = async (scrapedJobListings, searchTermId) => {
                 upsert: true
             }
         };
-    });
+    })
 
-    const result = await JobListing.bulkWrite(joblListingsForDB);
+    // .filter((operation): operation is { updateOne: { filter: { jobURL: string }; update: any; upsert: boolean } } => operation !== undefined); // Filter out undefined
+
+
+    const result = await JobListing.bulkWrite(joblListingsForDB as any);
     console.log(`Saved To DB Job Listing: ${result}`);
     return result;
 }
 
-const updateJobSearchTermsToScrape = async (scrapedJobListings, searchTermId, url) => {
-    let jobListingIds = [];
+interface ScrapedJobListingsResult {
+    upsertedIds: { [key: string]: string }; // or more specific if you know the structure
+}
+const updateJobSearchTermsToScrape = async (
+    scrapedJobListings: ScrapedJobListingsResult, // Change the type here
+    searchTermId: string,
+    url: string
+) => {
+    let jobListingIds: string[] = [];
 
     const parsedUrl = new URL(url);
     const params = new URLSearchParams(parsedUrl.search);
@@ -326,6 +364,7 @@ const updateJobSearchTermsToScrape = async (scrapedJobListings, searchTermId, ur
 
     const updatedUrl = `${parsedUrl.origin}${parsedUrl.pathname}?${params.toString()}`;
 
+    // Access upsertedIds directly from the result
     if (scrapedJobListings && scrapedJobListings.upsertedIds) {
         jobListingIds = Object.values(scrapedJobListings.upsertedIds);
     }
@@ -346,7 +385,8 @@ const updateJobSearchTermsToScrape = async (scrapedJobListings, searchTermId, ur
 };
 
 
-const saveToDBJobDescription = async (data) => {
+
+const saveToDBJobDescription = async (data: JobListing[]) => {
     const dataForDB = data.map(jobListing => {
         const { _id, description, scrapeRetries } = jobListing;
         return {
