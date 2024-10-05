@@ -38,4 +38,4 @@ async function runScrapingTasks() {
 
 // setInterval(runScrapingTasks, interval);
 
-runScrapingTasks();
+// runScrapingTasks();

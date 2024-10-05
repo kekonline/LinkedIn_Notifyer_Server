@@ -6,9 +6,24 @@ import stealthPlugin from 'puppeteer-extra-plugin-stealth';
 import JobListing from '../models/JobListing.model';
 import SearchTerm from '../models/SearchTerm.model';
 import { Page } from 'puppeteer';
-import { InsertOneResult } from 'mongodb';
+import { Types } from 'mongoose';
 
 dotenv.config();
+
+interface ProtoJobListing {
+    title: string | null;
+    company: string | null;
+    location: string | null;
+    datePosted: string | null;
+    jobURL: string | null;
+    companyLogo: string | null;
+}
+
+interface ProtoDescription {
+    _id: Types.ObjectId;
+    description: string | null;
+    scrapeRetries: number;
+}
 
 const delay = async (min = 3000, max = 4000, randomIncrease = 0) => {
     if (randomIncrease) {
@@ -113,12 +128,12 @@ const acceptCookies = async (page: Page): Promise<boolean> => {
     const cookieButton = await page.$('button.artdeco-global-alert-action');
     if (!cookieButton) {
         console.log('No Cookie Button Found');
-        return false;
+        return true;
     }
 
     console.log('Accepting Cookies');
     await cookieButton.click();
-    return true
+    return false
 
     // console.log('Checking for Cookie Button:');
     // try {
@@ -196,7 +211,7 @@ const insertCountry = async (page: Page, country: string): Promise<boolean> => {
 
 }
 
-const setWorkType = async (page: Page, jobType: string): Promise<[boolean, boolean | null]> => {
+const setWorkType = async (page: Page, jobType: string): Promise<[boolean, boolean]> => {
     try {
 
         let jobcode = '';
@@ -216,7 +231,7 @@ const setWorkType = async (page: Page, jobType: string): Promise<[boolean, boole
         await delay(4000, 5000);
         if (!(await page.$('button[aria-label="Remote filter. Clicking this button displays all Remote filter options."]'))) {
             console.log('No Work Type Button Found');
-            return [true, null]
+            return [true, false]
         }
         await page.locator('button[aria-label="Remote filter. Clicking this button displays all Remote filter options."]').click();
         await delay();
@@ -291,7 +306,7 @@ const getJobListingData = async (page: Page) => {
     }
 }
 
-const getJobDescriptionData = async (page: Page) => {
+const getJobDescriptionData = async (page: Page): Promise<[boolean, { description: string | null } | null]> => {
     console.log('Scraping Description');
     try {
         await delay(4000, 5000);
@@ -312,7 +327,7 @@ const getJobDescriptionData = async (page: Page) => {
     }
 }
 
-const saveToDBJobListing = async (scrapedJobListings: JobListing[], searchTermId: string) => {
+const saveToDBJobListing = async (scrapedJobListings: ProtoJobListing[], searchTermId: Types.ObjectId) => {
     const joblListingsForDB = scrapedJobListings.filter(jobListing => jobListing.jobURL).map(jobListing => {
         const { title, company,/* location,*/ jobURL } = jobListing;
 
@@ -351,8 +366,8 @@ interface ScrapedJobListingsResult {
     upsertedIds: { [key: string]: string }; // or more specific if you know the structure
 }
 const updateJobSearchTermsToScrape = async (
-    scrapedJobListings: ScrapedJobListingsResult, // Change the type here
-    searchTermId: string,
+    scrapedJobListings: ScrapedJobListingsResult | undefined, // Change the type here
+    searchTermId: Types.ObjectId,
     url: string
 ) => {
     let jobListingIds: string[] = [];
@@ -386,7 +401,7 @@ const updateJobSearchTermsToScrape = async (
 
 
 
-const saveToDBJobDescription = async (data: JobListing[]) => {
+const saveToDBJobDescription = async (data: ProtoDescription[]) => {
     const dataForDB = data.map(jobListing => {
         const { _id, description, scrapeRetries } = jobListing;
         return {
@@ -424,7 +439,7 @@ const getJobListingsWithNoDescription = async () => {
 const getJobSearchTermsToScrape = async () => {
     console.log('Fetching Job Search Terms To Scrape');
     try {
-        const timeAgo = new Date(Date.now() - process.env.TIME_AGO * 60 * 1000);
+        const timeAgo = new Date(Date.now() - Number(process.env.TIME_AGO) * 60 * 1000);
 
         return SearchTerm.find({
             $and: [
@@ -449,7 +464,7 @@ const getJobSearchTermsToScrape = async () => {
 };
 
 
-const scrapeJobListing = async () => {
+export const scrapeJobListing = async () => {
     try {
         let searchTermsToScrape = await getJobSearchTermsToScrape();
         if (!searchTermsToScrape || searchTermsToScrape.length === 0) {
@@ -476,11 +491,11 @@ const scrapeJobListing = async () => {
                         if (!scraperFailed) scraperFailed = await acceptCookies(page);
                         if (!scraperFailed) scraperFailed = await insertJob(page, term);
                         if (!scraperFailed) scraperFailed = await insertCountry(page, location);
-                        if (!scraperFailed) [scraperFailed, dataAvailable] = await setWorkType(page, jobType);
+                        if (!scraperFailed) [scraperFailed, dataAvailable] = await setWorkType(page, jobType as string);
                         if (!scraperFailed && dataAvailable) [scraperFailed, dataAvailable] = await setJobsLast24Hours(page);
                     }
                     if (dataAvailable && !scraperFailed) {
-                        const scrapedJobListings = await getJobListingData(page);
+                        const scrapedJobListings: ProtoJobListing[] = await getJobListingData(page);
                         if (scrapedJobListings) {
                             const savedJobListings = await saveToDBJobListing(scrapedJobListings, searchTermId);
                             await updateJobSearchTermsToScrape(savedJobListings, searchTermId, page.url());
@@ -488,7 +503,7 @@ const scrapeJobListing = async () => {
                             scraperFailed = true;
                         }
                     } else if (!dataAvailable && !scraperFailed) {
-                        await updateJobSearchTermsToScrape([], searchTermId, page.url());
+                        await updateJobSearchTermsToScrape(undefined, searchTermId, page.url());
                     }
                     if (browser) await browser.close();
                 } catch (innerError) {
@@ -511,7 +526,7 @@ const scrapeJobListing = async () => {
     }
 };
 
-const scrapeJobDescription = async () => {
+export const scrapeJobDescription = async () => {
     try {
         let jobsToScrapeDescription = await getJobListingsWithNoDescription();
 
@@ -521,7 +536,7 @@ const scrapeJobDescription = async () => {
         }
 
         while (jobsToScrapeDescription.length > 0) {
-            let allDescriptions = [];
+            let allDescriptions: ProtoDescription[] = [];
             for await (const jobListing of jobsToScrapeDescription) {
                 let browser;
                 try {
@@ -531,9 +546,9 @@ const scrapeJobDescription = async () => {
                     if (!scraperFailed) scraperFailed = await acceptCookies(page);
                     if (!scraperFailed) {
                         const [error, gotDescription] = await getJobDescriptionData(page);
-                        scraperFailed = error;
+                        scraperFailed = error ? true : false;
                         if (!scraperFailed) {
-                            allDescriptions.push({ _id: jobListing._id, description: gotDescription.description, scrapeRetries: jobListing.scrapeRetries });
+                            allDescriptions.push({ _id: jobListing._id, description: gotDescription && gotDescription.description ? gotDescription.description : null, scrapeRetries: jobListing.scrapeRetries });
                         } else {
                             allDescriptions.push({ _id: jobListing._id, description: null, scrapeRetries: jobListing.scrapeRetries });
                         }
@@ -564,6 +579,6 @@ const scrapeJobDescription = async () => {
 
 
 
-module.exports = {
+exports = {
     scrapeJobListing, scrapeJobDescription
 };
