@@ -3,7 +3,7 @@ import User from "../models/User.model";
 import JobListing from "../models/JobListing.model";
 import SearchTerm from '../models/SearchTerm.model';
 import dotenv from 'dotenv';
-
+dotenv.config();
 // const JobListing = require('../models/JobListing.model');
 
 const transporter = nodemailer.createTransport({

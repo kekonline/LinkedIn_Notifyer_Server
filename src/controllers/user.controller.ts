@@ -358,6 +358,7 @@ export const reSendActivation = async (req: Request, res: Response, next: NextFu
         res.json({ message: "Activation email sent successfully", error: false });
 
     } catch (error) {
+        console.log("error", error);
         next(error);
     }
 }
