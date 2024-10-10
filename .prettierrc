@@ -1,0 +1,11 @@
+{
+  "singleQuote": true,
+  "trailingComma": "all",
+  "endOfLine": "auto",
+  "tabWidth": 2,
+  "bracketSpacing": false,
+  "extends": [
+    "plugin:prettier/recommended"
+  ],
+  "plugins": ["prettier"]
+}
