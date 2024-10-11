@@ -1,5 +1,5 @@
 import { Controller, Post, Put, Get, Body, Param, UseGuards } from '@nestjs/common';
-import { UserService } from '../services/user.service'; // Equivalent to userController in Express
+import { UserService } from './user.service'; // Equivalent to userController in Express
 // import { AuthGuard } from '../guards/auth.guard'; // Assuming you have an AuthGuard for authentication
 
 @Controller('auth')
@@ -8,30 +8,29 @@ export class UserController {
 
     // POST /api/auth/register - Registration
     @Post('register')
-    // @UseGuards(AuthGuard) // Authentication guard applied
-    async register(@Body() body) {
-        return this.userService.register(body);
+    async register(@Body('email') email: string, @Body('password') password: string) {
+        return this.userService.register(email, password);
     }
 
     // POST /api/auth/login - Login
     @Post('login')
     // @UseGuards(AuthGuard)
-    async logIn(@Body() body) {
-        return this.userService.logIn(body);
+    async logIn(@Body('email') email: string, @Body('password') password: string) {
+        return this.userService.logIn(email, password);
     }
 
     // GET /api/auth/verify - User Verification
     @Get('verify')
     // @UseGuards(AuthGuard)
-    async verify() {
-        return this.userService.verify();
+    async verify(@Body('userId') userId: string) {
+        return this.userService.verify(userId);
     }
 
     // PUT /api/auth/newpassword - password change request
     @Put('newpassword')
     // @UseGuards(AuthGuard)
-    async newPassword(@Body() body) {
-        return this.userService.newPassword(body);
+    async newPassword(@Body('userId') userId: string, @Body('oldPassword') oldPassword: string, @Body('newPassword') newPassword: string) {
+        return this.userService.newPassword(userId, oldPassword, newPassword);
     }
 
     // GET /api/auth/gettoken - Get Token
@@ -43,8 +42,8 @@ export class UserController {
     // PUT /api/auth/user - Update User Info
     @Put('user')
     // @UseGuards(AuthGuard)
-    async updateUser(@Body() body) {
-        return this.userService.userInfo(body);
+    async updateUser(@Body('userId') userId: string, @Body('getNotifications') getNotifications: boolean) {
+        return this.userService.userInfo(userId, getNotifications);
     }
 
     // GET /api/auth/activate/:token - Activate User
@@ -57,8 +56,8 @@ export class UserController {
     // GET /api/auth/resendactivation - Resend Activation
     @Get('resendactivation')
     // @UseGuards(AuthGuard)
-    async reSendActivation() {
-        return this.userService.reSendActivation();
+    async reSendActivation(@Body('userId') userId: string) {
+        return this.userService.reSendActivation(userId);
     }
 
     // POST /api/auth/sendforgotpasswordemail - Forgot Password
@@ -71,7 +70,7 @@ export class UserController {
     // POST /api/auth/resetpassword - Reset Password
     @Post('resetpassword')
     // @UseGuards(AuthGuard)
-    async resetPassword(@Body() body) {
-        return this.userService.resetPassword(body);
+    async resetPassword(@Body('email') email: string, @Body('password') password: string, @Body('token') token: string) {
+        return this.userService.resetPassword(email, password, token);
     }
 }
