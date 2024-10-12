@@ -1,27 +1,13 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from '../models/user.model';
-import { sendMail } from '../mailer/mailerJob';
+import { User } from './schemas/user.schema';
+// import { sendMail } from '../mailer/mailerJob';
 import { ConfigService } from '@nestjs/config';
-
-
-
-
-///////////////////////////////////////////////// missi
-// missing lods of stuff from the original file
-
-
-
-
-
-
-
-
-
+import { AuthRequest } from './request.interface';
 
 @Injectable()
 export class UserService {
@@ -48,7 +34,7 @@ export class UserService {
         }
     }
 
-    async register(email: string, password: string): Promise<any> {
+    async register(email: string, password: string, req: AuthRequest): Promise<any> {
         if (!email || !password) {
             throw new HttpException('All fields are required', HttpStatus.BAD_REQUEST);
         }
@@ -57,6 +43,23 @@ export class UserService {
         if (isEmailDuplicated) {
             throw new HttpException('Email already registered', HttpStatus.BAD_REQUEST);
         }
+
+        console.log('req');
+
+        // let userId = (req as Request & { payload?: { _id: string } }).payload?._id;
+        // const isUserAlreadyRegistered = await User.findOne({ _id: userId });
+        // if (isUserAlreadyRegistered && isUserAlreadyRegistered.email) {
+        //     throw new HttpException('You already have an account', HttpStatus.BAD_REQUEST);
+
+        // }
+
+        // const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        // if (!regex.test(email)) {
+        //     res
+        //         .status(400)
+        //         .json({ message: "Invalid email", error: true });
+        //     return;
+        // }
 
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
@@ -71,7 +74,7 @@ export class UserService {
       <p>Please click on the link below to activate your account:</p>
       <p><a href="${this.configService.get('ORIGIN') || 'http://localhost:5173'}/account/activate/${activationToken}">Activate Account</a></p>`;
 
-        await sendMail(email, 'Activate Your Account', message);
+        // await sendMail(email, 'Activate Your Account', message);
         return { message: 'User created successfully', error: false };
     }
 
@@ -170,7 +173,7 @@ export class UserService {
       <p>Please click on the link below to activate your account:</p>
       <p><a href="${this.configService.get('ORIGIN') || 'http://localhost:5173'}/account/activate/${user.token.value}">Activate Account</a></p>`;
 
-        await sendMail(user.email, 'Activate Your Account', message);
+        // await sendMail(user.email, 'Activate Your Account', message);
         return { message: 'Activation email sent successfully', error: false };
     }
 

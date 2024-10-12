@@ -1,6 +1,7 @@
-import { Controller, Post, Put, Get, Body, Param, UseGuards } from '@nestjs/common';
-import { UserService } from './user.service'; // Equivalent to userController in Express
-// import { AuthGuard } from '../guards/auth.guard'; // Assuming you have an AuthGuard for authentication
+import { Controller, Post, Put, Get, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { UserService } from './user.service';
+import { AuthGuard } from '../user/guards/auth.guard';
+import { AuthRequest } from './request.interface';
 
 @Controller('auth')
 export class UserController {
@@ -8,8 +9,9 @@ export class UserController {
 
     // POST /api/auth/register - Registration
     @Post('register')
-    async register(@Body('email') email: string, @Body('password') password: string) {
-        return this.userService.register(email, password);
+    async register(@Request() req: AuthRequest, @Body('email') email: string, @Body('password') password: string) {
+        console.log("req", req);
+        return this.userService.register(email, password, req);
     }
 
     // POST /api/auth/login - Login
@@ -21,7 +23,7 @@ export class UserController {
 
     // GET /api/auth/verify - User Verification
     @Get('verify')
-    // @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard)
     async verify(@Body('userId') userId: string) {
         return this.userService.verify(userId);
     }
@@ -68,9 +70,9 @@ export class UserController {
     }
 
     // POST /api/auth/resetpassword - Reset Password
-    @Post('resetpassword')
-    // @UseGuards(AuthGuard)
-    async resetPassword(@Body('email') email: string, @Body('password') password: string, @Body('token') token: string) {
-        return this.userService.resetPassword(email, password, token);
-    }
+    // @Post('resetpassword')
+    // // @UseGuards(AuthGuard)
+    // async resetPassword(@Body('email') email: string, @Body('password') password: string, @Body('token') token: string) {
+    //     return this.userService.resetPassword(email, password, token);
+    // }
 }

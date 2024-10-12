@@ -13,7 +13,7 @@ interface SeenJobListing {
 
 @Schema({ timestamps: true })
 export class User {
-    @Prop({ required: true })
+    @Prop()
     email?: string; // Optional due to sparse
 
     @Prop()
