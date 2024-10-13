@@ -9,6 +9,7 @@ import { User } from './schemas/user.schema';
 import { ConfigService } from '@nestjs/config';
 import { AuthRequest } from './request.interface';
 
+
 @Injectable()
 export class UserService {
     constructor(
@@ -34,7 +35,7 @@ export class UserService {
         }
     }
 
-    async register(email: string, password: string, req: AuthRequest): Promise<any> {
+    async register(email: string, password: string, req: AuthRequest): Promise<{ message: string, error: boolean }> {
         if (!email || !password) {
             throw new HttpException('All fields are required', HttpStatus.BAD_REQUEST);
         }
@@ -44,30 +45,26 @@ export class UserService {
             throw new HttpException('Email already registered', HttpStatus.BAD_REQUEST);
         }
 
-        console.log('req');
+        const userId = req.payload?._id;
 
-        // let userId = (req as Request & { payload?: { _id: string } }).payload?._id;
-        // const isUserAlreadyRegistered = await User.findOne({ _id: userId });
-        // if (isUserAlreadyRegistered && isUserAlreadyRegistered.email) {
-        //     throw new HttpException('You already have an account', HttpStatus.BAD_REQUEST);
 
-        // }
+        const isUserAlreadyRegistered = await this.userModel.findOne({ _id: userId });
+        if (isUserAlreadyRegistered && isUserAlreadyRegistered.email) {
+            throw new HttpException('You already have an account', HttpStatus.BAD_REQUEST);
+        }
 
-        // const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        // if (!regex.test(email)) {
-        //     res
-        //         .status(400)
-        //         .json({ message: "Invalid email", error: true });
-        //     return;
-        // }
+        const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!regex.test(email)) {
+            throw new HttpException('Invalid email', HttpStatus.BAD_REQUEST);
+        }
 
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
         const activationToken = uuidv4();
 
-        await this.userModel.updateOne(
-            { email },
-            { $set: { email, password: passwordHash, 'token.value': activationToken } },
+        await this.userModel.findOneAndUpdate(
+            { _id: userId },
+            { $set: { email, password: passwordHash, "token.value": activationToken } }
         );
 
         const message = `<p>Hi there ${email}!</p>
@@ -78,7 +75,7 @@ export class UserService {
         return { message: 'User created successfully', error: false };
     }
 
-    async logIn(email: string, password: string): Promise<any> {
+    async logIn(email: string, password: string): Promise<{ authToken: string }> {
         if (!email || !password) {
             throw new HttpException('All fields are required', HttpStatus.BAD_REQUEST);
         }
@@ -126,7 +123,7 @@ export class UserService {
         };
     }
 
-    async newPassword(userId: string, oldPassword: string, newPassword: string): Promise<any> {
+    async newPassword(userId: string, oldPassword: string, newPassword: string): Promise<{ message: string, error: boolean }> {
         const user = await this.userModel.findById(userId);
         if (!user || !oldPassword || !newPassword) {
             throw new HttpException('All fields are required', HttpStatus.BAD_REQUEST);
@@ -143,7 +140,7 @@ export class UserService {
         return { message: 'Password updated successfully', error: false };
     }
 
-    async userInfo(userId: string, getNotifications: boolean): Promise<any> {
+    async userInfo(userId: string, getNotifications: boolean): Promise<{ message: string, error: boolean }> {
         const user = await this.userModel.findById(userId);
         if (!user || !user.email || !user.isActive) {
             throw new HttpException('User is not active or email missing', HttpStatus.UNAUTHORIZED);
@@ -153,7 +150,7 @@ export class UserService {
         return { message: 'Notifications updated successfully', error: false };
     }
 
-    async activateUser(userId: string): Promise<any> {
+    async activateUser(userId: string): Promise<{ message: string, error: boolean }> {
         const user = await this.userModel.findById(userId);
         if (!user || !user.email || user.isActive) {
             throw new HttpException('User not found or already active', HttpStatus.BAD_REQUEST);
@@ -163,7 +160,7 @@ export class UserService {
         return { message: 'User activated successfully', error: false };
     }
 
-    async reSendActivation(userId: string): Promise<any> {
+    async reSendActivation(userId: string): Promise<{ message: string, error: boolean }> {
         const user = await this.userModel.findById(userId);
         if (!user || user.isActive || !user.email) {
             throw new HttpException('User not found or already active', HttpStatus.BAD_REQUEST);
@@ -177,7 +174,7 @@ export class UserService {
         return { message: 'Activation email sent successfully', error: false };
     }
 
-    async sendForgotPasswordEmail(email: string): Promise<any> {
+    async sendForgotPasswordEmail(email: string): Promise<{ message: string, error: boolean }> {
         if (!email) {
             throw new HttpException('Email is required', HttpStatus.BAD_REQUEST);
         }
@@ -187,7 +184,64 @@ export class UserService {
             throw new HttpException('User not found', HttpStatus.UNAUTHORIZED);
         }
 
-        // Generate and send reset password email logic here...
+        const activationToken = uuidv4();
+
+        await this.userModel.findByIdAndUpdate(
+            user[0]._id, { isActive: true, "token.value": activationToken, "token.expiry": Date.now() + 15 * 60 * 1000 }, { new: true }
+        );
+
+        const message = `<p>Hi there ${user[0].email}!</p>
+        <p>Please click on the link to follow to reset your password:</p>
+        <p><a href="${process.env.ORIGIN || "http://localhost:5173"}/account/resetpassword/${activationToken}">Reset Password</a></p>`
+
+        // sendMail(user[0].email, 'Password Reset', message);
+
         return { message: 'Password reset email sent', error: false };
     }
+
+    async resetPassword(email: string, password: string, token: string): Promise<{ message: string, error: boolean }> {
+
+        if (!email || !password || !token) {
+            throw new HttpException('All fields are required"', HttpStatus.BAD_REQUEST);
+        }
+
+        const user = await this.userModel.find({ email });
+
+        if (user && user.length === 0) {
+            console.log("User not found");
+            throw new HttpException('Token is invalid', HttpStatus.UNAUTHORIZED);
+        }
+
+        if (user && !user[0].isActive) {
+            console.log("User is not active");
+            throw new HttpException('User is not active', HttpStatus.UNAUTHORIZED);
+        }
+
+        if (!user[0].email) {
+            throw new HttpException('User email is required', HttpStatus.UNAUTHORIZED);
+        }
+
+        if (user[0].email != email) {
+            throw new HttpException('Invalid emai', HttpStatus.UNAUTHORIZED);
+        }
+
+        if (user[0].token.value !== token) {
+            throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
+        }
+
+        if (user[0].token.expiry.getTime() < Date.now()) {
+            throw new HttpException('Token expired', HttpStatus.UNAUTHORIZED);
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(password, salt);
+
+        await this.userModel.findByIdAndUpdate(user[0]._id, { password: passwordHash, "token.value": null, "token.expiry": null }, { new: true });
+
+        return { message: 'Password updated successfully', error: false };
+
+    }
+
+
+
 }
