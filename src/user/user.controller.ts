@@ -9,6 +9,7 @@ export class UserController {
 
     // POST /api/auth/register - Registration
     @Post('register')
+    @UseGuards(AuthGuard)
     async register(@Request() req: AuthRequest, @Body('email') email: string, @Body('password') password: string) {
         console.log("req", req);
         return this.userService.register(email, password, req);
@@ -16,7 +17,7 @@ export class UserController {
 
     // POST /api/auth/login - Login
     @Post('login')
-    // @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard)
     async logIn(@Body('email') email: string, @Body('password') password: string) {
         return this.userService.logIn(email, password);
     }
@@ -30,7 +31,7 @@ export class UserController {
 
     // PUT /api/auth/newpassword - password change request
     @Put('newpassword')
-    // @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard)
     async newPassword(@Body('userId') userId: string, @Body('oldPassword') oldPassword: string, @Body('newPassword') newPassword: string) {
         return this.userService.newPassword(userId, oldPassword, newPassword);
     }
@@ -43,36 +44,36 @@ export class UserController {
 
     // PUT /api/auth/user - Update User Info
     @Put('user')
-    // @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard)
     async updateUser(@Body('userId') userId: string, @Body('getNotifications') getNotifications: boolean) {
         return this.userService.userInfo(userId, getNotifications);
     }
 
     // GET /api/auth/activate/:token - Activate User
     @Get('activate/:token')
-    // @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard)
     async activateUser(@Param('token') token: string) {
         return this.userService.activateUser(token);
     }
 
     // GET /api/auth/resendactivation - Resend Activation
     @Get('resendactivation')
-    // @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard)
     async reSendActivation(@Body('userId') userId: string) {
         return this.userService.reSendActivation(userId);
     }
 
     // POST /api/auth/sendforgotpasswordemail - Forgot Password
     @Post('sendforgotpasswordemail')
-    // @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard)
     async sendForgotPasswordEmail(@Body() body) {
         return this.userService.sendForgotPasswordEmail(body);
     }
 
-    // POST /api/auth/resetpassword - Reset Password
-    // @Post('resetpassword')
-    // // @UseGuards(AuthGuard)
-    // async resetPassword(@Body('email') email: string, @Body('password') password: string, @Body('token') token: string) {
-    //     return this.userService.resetPassword(email, password, token);
-    // }
+    // // POST /api/auth/resetpassword - Reset Password
+    @Post('resetpassword')
+    @UseGuards(AuthGuard)
+    async resetPassword(@Body('email') email: string, @Body('password') password: string, @Body('token') token: string) {
+        return this.userService.resetPassword(email, password, token);
+    }
 }
