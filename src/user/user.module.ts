@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
     MongooseModule.forFeature([{ name: 'User', schema: UserSchema }]),
   ],
   providers: [UserService, JwtService, ConfigService],
-  controllers: [UserController]
+  controllers: [UserController],
+  exports: [UserService, MongooseModule],
 })
 export class UserModule { }
