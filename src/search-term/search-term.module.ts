@@ -7,11 +7,11 @@ import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: SearchTerm.name, schema: SearchTermSchema }]),
-    UserModule
+    MongooseModule.forFeature([{ name: SearchTerm.name, schema: SearchTermSchema }]), UserModule
+
   ],
   controllers: [SearchTermController],
   exports: [SearchTermService],
-  providers: [SearchTermService]
+  providers: [SearchTermService, MongooseModule]
 })
 export class SearchTermModule { }
