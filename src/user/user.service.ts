@@ -5,7 +5,7 @@ import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
-// import { sendMail } from '../mailer/mailerJob';
+import { MailService } from '../mail/mail.service';
 import { ConfigService } from '@nestjs/config';
 import { AuthRequest } from './request.interface';
 
@@ -15,7 +15,8 @@ export class UserService {
     constructor(
         @InjectModel(User.name) private userModel: Model<User>,
         private jwtService: JwtService,
-        private configService: ConfigService
+        private configService: ConfigService,
+        private mailService: MailService,
     ) { }
 
     async getToken(): Promise<any> {
@@ -71,7 +72,7 @@ export class UserService {
       <p>Please click on the link below to activate your account:</p>
       <p><a href="${this.configService.get('ORIGIN') || 'http://localhost:5173'}/account/activate/${activationToken}">Activate Account</a></p>`;
 
-        // await sendMail(email, 'Activate Your Account', message);
+        await this.mailService.sendMail(email, 'Activate Your Account', message);
         return { message: 'User created successfully', error: false };
     }
 
@@ -170,7 +171,7 @@ export class UserService {
       <p>Please click on the link below to activate your account:</p>
       <p><a href="${this.configService.get('ORIGIN') || 'http://localhost:5173'}/account/activate/${user.token.value}">Activate Account</a></p>`;
 
-        // await sendMail(user.email, 'Activate Your Account', message);
+        await this.mailService.sendMail(user.email, 'Activate Your Account', message);
         return { message: 'Activation email sent successfully', error: false };
     }
 
@@ -194,7 +195,7 @@ export class UserService {
         <p>Please click on the link to follow to reset your password:</p>
         <p><a href="${process.env.ORIGIN || "http://localhost:5173"}/account/resetpassword/${activationToken}">Reset Password</a></p>`
 
-        // sendMail(user[0].email, 'Password Reset', message);
+        this.mailService.sendMail(user[0].email, 'Password Reset', message);
 
         return { message: 'Password reset email sent', error: false };
     }
