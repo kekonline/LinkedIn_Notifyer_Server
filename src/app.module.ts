@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './user/user.module';
 import { SearchTermModule } from './search-term/search-term.module';
 import { JobListingModule } from './job-listing/job-listing.module';
+import { MailModule } from './mail/mail.module';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -17,6 +18,7 @@ dotenv.config();
     UserModule,
     SearchTermModule,
     JobListingModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
