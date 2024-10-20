@@ -1,12 +1,15 @@
 import dotenv from 'dotenv';
-import axios from 'axios';
+// import axios from 'axios';
 import { URL } from 'url';
 import puppeteer from 'puppeteer-extra';
 import stealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { JobListing } from '../job-listing/schemas/job-listing.schema';
-import { SearchTerm } from '../search-term/schemas/search-term.schema';
+import { JobListingSchema } from '../job-listing/schemas/job-listing.schema';
+import { SearchTermSchema } from '../search-term/schemas/search-term.schema';
 import { Page } from 'puppeteer';
+import * as mongoose from 'mongoose';
 import { Types } from 'mongoose';
+const JobListingModel = mongoose.model('JobListing', JobListingSchema);
+const SearchTermModel = mongoose.model('SearchTerm', SearchTermSchema);
 
 dotenv.config();
 
@@ -357,7 +360,7 @@ const saveToDBJobListing = async (scrapedJobListings: ProtoJobListing[], searchT
     // .filter((operation): operation is { updateOne: { filter: { jobURL: string }; update: any; upsert: boolean } } => operation !== undefined); // Filter out undefined
 
 
-    const result = await JobListing.bulkWrite(joblListingsForDB as any);
+    const result = await JobListingModel.bulkWrite(joblListingsForDB as any);
     console.log(`Saved To DB Job Listing: ${result}`);
     return result;
 }
@@ -385,7 +388,7 @@ const updateJobSearchTermsToScrape = async (
     }
 
     try {
-        await SearchTerm.updateOne(
+        await SearchTermModel.updateOne(
             { _id: searchTermId },
             {
                 $addToSet: { jobListings: { $each: jobListingIds } }, // Add job listing IDs to the array, ensuring no duplicates
@@ -417,12 +420,12 @@ const saveToDBJobDescription = async (data: ProtoDescription[]) => {
             }
         };
     });
-    const result = await JobListing.bulkWrite(dataForDB);
+    await JobListingModel.bulkWrite(dataForDB);
 }
 
 const getJobListingsWithNoDescription = async () => {
     try {
-        const jobListings = await JobListing.find({
+        const jobListings = await JobListingModel.find({
             $or: [
                 { description: { $exists: false } },
                 { description: null }
@@ -441,7 +444,7 @@ const getJobSearchTermsToScrape = async () => {
     try {
         const timeAgo = new Date(Date.now() - Number(process.env.TIME_AGO) * 60 * 1000);
 
-        return SearchTerm.find({
+        return SearchTermModel.find({
             $and: [
                 {
                     $or: [
@@ -476,7 +479,7 @@ export const scrapeJobListing = async () => {
             let retries = 0;
             let scraperFailed = false;
             let dataAvailable = true;
-            let { _id: searchTermId, term, location, jobType } = searchTermsToScrape[0];
+            const { _id: searchTermId, term, location, jobType } = searchTermsToScrape[0];
 
             do {
                 let page, browser;
@@ -536,7 +539,7 @@ export const scrapeJobDescription = async () => {
         }
 
         while (jobsToScrapeDescription.length > 0) {
-            let allDescriptions: ProtoDescription[] = [];
+            const allDescriptions: ProtoDescription[] = [];
             for await (const jobListing of jobsToScrapeDescription) {
                 let browser;
                 try {
@@ -548,9 +551,9 @@ export const scrapeJobDescription = async () => {
                         const [error, gotDescription] = await getJobDescriptionData(page);
                         scraperFailed = error ? true : false;
                         if (!scraperFailed) {
-                            allDescriptions.push({ _id: jobListing._id, description: gotDescription && gotDescription.description ? gotDescription.description : null, scrapeRetries: jobListing.scrapeRetries });
+                            allDescriptions.push({ _id: jobListing._id as Types.ObjectId, description: gotDescription && gotDescription.description ? gotDescription.description : null, scrapeRetries: jobListing.scrapeRetries });
                         } else {
-                            allDescriptions.push({ _id: jobListing._id, description: null, scrapeRetries: jobListing.scrapeRetries });
+                            allDescriptions.push({ _id: jobListing._id as Types.ObjectId, description: null, scrapeRetries: jobListing.scrapeRetries });
                         }
                     }
                     await browser.close();
