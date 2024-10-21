@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
 import nodemailer from 'nodemailer';
 import { User } from '../user/schemas/user.schema';
 import { JobListing } from '../job-listing/schemas/job-listing.schema';
@@ -13,7 +14,9 @@ dotenv.config();
 export class MailService {
     private transporter;
 
-    constructor() {
+    constructor(@InjectModel(User.name) private userModel: Model<User>,
+        @InjectModel(JobListing.name) private jobListingModel: Model<JobListing>,
+        @InjectModel(SearchTerm.name) private searchTermModel: Model<SearchTerm>,) {
         this.transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -47,7 +50,7 @@ export class MailService {
 
     private async getEmailsToSend(): Promise<{ email: string; unseenJobListings: JobListing[] }[]> {
         try {
-            const users = await (User as Model<User>).find({ email: { $exists: true, $ne: null }, getNotifications: true })
+            const users = await this.userModel.find({ email: { $exists: true, $ne: null }, getNotifications: true })
                 .select('email seenJobListings')
                 .sort('email');
 
@@ -60,7 +63,7 @@ export class MailService {
             for (const user of users) {
                 if (!user.email) continue;
 
-                const searchTerms = await (SearchTerm as Model<SearchTerm>).find({ users: user._id }).populate({
+                const searchTerms = await this.searchTermModel.find({ users: user._id }).populate({
                     path: 'jobListings',
                     model: 'JobListing',
                     select: '-users',

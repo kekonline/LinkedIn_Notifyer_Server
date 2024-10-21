@@ -1,4 +1,4 @@
-import { Controller, Post, Put, Get, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Put, Get, Body, Param, UseGuards, Request, Req } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AuthGuard } from '../user/guards/auth.guard';
 import { AuthRequest } from './request.interface';
@@ -25,14 +25,16 @@ export class UserController {
     // GET /api/auth/verify - User Verification
     @Get('verify')
     @UseGuards(AuthGuard)
-    async verify(@Body('userId') userId: string) {
+    async verify(@Req() req: AuthRequest) {
+        const userId = req.payload?._id;
         return this.userService.verify(userId);
     }
 
     // PUT /api/auth/newpassword - password change request
     @Put('newpassword')
     @UseGuards(AuthGuard)
-    async newPassword(@Body('userId') userId: string, @Body('oldPassword') oldPassword: string, @Body('newPassword') newPassword: string) {
+    async newPassword(@Req() req: AuthRequest, @Body('oldPassword') oldPassword: string, @Body('newPassword') newPassword: string) {
+        const userId = req.payload?._id;
         return this.userService.newPassword(userId, oldPassword, newPassword);
     }
 
@@ -45,7 +47,8 @@ export class UserController {
     // PUT /api/auth/user - Update User Info
     @Put('user')
     @UseGuards(AuthGuard)
-    async updateUser(@Body('userId') userId: string, @Body('getNotifications') getNotifications: boolean) {
+    async updateUser(@Req() req: AuthRequest, @Body('getNotifications') getNotifications: boolean) {
+        const userId = req.payload?._id;
         return this.userService.userInfo(userId, getNotifications);
     }
 
@@ -59,7 +62,8 @@ export class UserController {
     // GET /api/auth/resendactivation - Resend Activation
     @Get('resendactivation')
     @UseGuards(AuthGuard)
-    async reSendActivation(@Body('userId') userId: string) {
+    async reSendActivation(@Req() req: AuthRequest,) {
+        const userId = req.payload?._id;
         return this.userService.reSendActivation(userId);
     }
 

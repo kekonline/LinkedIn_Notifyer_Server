@@ -8,6 +8,7 @@ const SearchTerm = mongoose.model('SearchTerm', SearchTermSchema);
 
 
 export const deleteUsersWithoutEmailAndOldCreatedDate = async () => {
+
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
