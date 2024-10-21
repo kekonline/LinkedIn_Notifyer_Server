@@ -14,7 +14,7 @@ import { AuthGuard } from '../user/guards/auth.guard'; // Assuming you're using 
 import { MarkJobDto } from './dto/mark-job.dto'; // Create a DTO for the request body
 import { AuthRequest } from '../user/request.interface';
 
-@Controller('api/job')
+@Controller('job')
 export class JobListingController {
     constructor(private readonly jobListingService: JobListingService) { }
 
