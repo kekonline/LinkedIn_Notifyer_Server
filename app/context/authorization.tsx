@@ -43,7 +43,7 @@ function AuthWrapper({ children }: AuthWrapperProps) {
 
       // console.log("authToken", authToken);
       if (!authToken || authToken === 'undefined' || authToken === null || authToken === '') {
-        const newTokenResponse = await axiosInstance.get<{ authToken: string; errorMessage?: string }>('auth/gettoken');
+        const newTokenResponse = await axiosInstance.get<{ authToken: string; errorMessage?: string }>('/api/auth/gettoken');
         console.log('newTokenResponse', newTokenResponse);
         if (newTokenResponse.data.errorMessage) {
           throw new Error(newTokenResponse.data.errorMessage);
@@ -59,7 +59,7 @@ function AuthWrapper({ children }: AuthWrapperProps) {
         getNotifications: boolean;
         isActive: boolean;
         errorMessage?: string;
-      }>('auth/verify');
+      }>('/api/auth/verify');
 
       if (userInfo.data.errorMessage) {
         throw new Error(userInfo.data.errorMessage);
