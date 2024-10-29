@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { AuthContext } from "../context/authorization";
-import { NavLink } from "react-router-dom";
+import Link from 'next/link'
 import "./NavBar.css"
 
 const NavBar = () => {
@@ -17,34 +17,34 @@ const NavBar = () => {
         <div className="navBarContainer">
             Nav
             <div>
-                <NavLink to="/joblisting/new">
+                <Link href="/joblisting/new" >
                     Job Listings new
-                </NavLink>
+                </Link>
             </div>
             <div>
-                <NavLink to="/joblisting/seen">
+                <Link href="/joblisting/seen">
                     Job Listings seen
-                </NavLink>
+                </Link>
             </div>
             <div>
-                <NavLink to="/joblisting/starred">
+                <Link href="/joblisting/starred">
                     Job Listings starred
-                </NavLink>
+                </Link>
             </div>
             <div>
-                <NavLink to="/jobsearch">
+                <Link href="/jobsearch">
                     Job Search
-                </NavLink>
+                </Link>
             </div>
             {userEnrolled ? (<div>
-                <NavLink to="/account/user" >
+                <Link href="/account/user" >
                     User
-                </NavLink>
+                </Link>
             </div>) :
                 <div>
-                    <NavLink to="/account/enroll" >
+                    <Link href="/account/enroll" >
                         Enroll
-                    </NavLink>
+                    </Link>
                 </div>}
         </div>
     )
