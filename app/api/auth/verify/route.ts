@@ -13,9 +13,9 @@ const maskEmail = (email: string) => {
 };
 
 export async function GET(originalReq: Request) {
-    await conectToDB();
 
     try {
+        await conectToDB();
         const req = (await authentication(originalReq)) as Request & {
             payload?: { _id: string };
         };

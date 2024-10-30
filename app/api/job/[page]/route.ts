@@ -12,7 +12,7 @@ export async function GET(originalReq: Request) {
     const userId = (req as Request & { payload?: { _id: string } }).payload?._id;
 
     const url = new URL(originalReq.url);
-    const page = url.pathname.split('/').pop(); // Assuming the page parameter is the last part of the URL
+    const page = url.pathname.split('/').pop();
 
     if (!userId) {
         return NextResponse.json({ message: 'User not authenticated', error: true }, { status: 401 });
