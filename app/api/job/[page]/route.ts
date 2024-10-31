@@ -1,24 +1,26 @@
 import { NextResponse } from 'next/server';
 import User, { User as UserDocument } from './../../../models/User.model'; // Import User interface
-import SearchTerm from './../../../models/SearchTerm.model';
 import JobListing from './../../../models/JobListing.model';
+import SearchTerm from './../../../models/SearchTerm.model';
 import { conectToDB, authentication } from './../../../middleware';
 
 export async function GET(originalReq: Request) {
-    await conectToDB();
-    const req = (await authentication(originalReq)) as Request & {
-        payload?: { _id: string };
-    };
-    const userId = (req as Request & { payload?: { _id: string } }).payload?._id;
 
-    const url = new URL(originalReq.url);
-    const page = url.pathname.split('/').pop();
-
-    if (!userId) {
-        return NextResponse.json({ message: 'User not authenticated', error: true }, { status: 401 });
-    }
 
     try {
+        await conectToDB();
+        //  await JobListing.find({}); if the collecton is not crated
+        const req = (await authentication(originalReq)) as Request & {
+            payload?: { _id: string };
+        };
+        const userId = (req as Request & { payload?: { _id: string } }).payload?._id;
+
+        const url = new URL(originalReq.url);
+        const page = url.pathname.split('/').pop();
+
+        if (!userId) {
+            return NextResponse.json({ message: 'User not authenticated', error: true }, { status: 401 });
+        }
         const searchTerms = await SearchTerm.find({ users: userId })
             .populate({
                 path: 'jobListings',
