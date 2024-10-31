@@ -2,6 +2,8 @@ import nodemailer from 'nodemailer';
 import User from "../models/User.model";
 import JobListing from "../models/JobListing.model";
 import SearchTerm from '../models/SearchTerm.model';
+import dotenv from 'dotenv';
+dotenv.config();
 // const JobListing = require('../models/JobListing.model');
 
 const transporter = nodemailer.createTransport({
@@ -45,7 +47,7 @@ const getEmailsToSend = async (): Promise<{ email: string, unseenJobListings: Jo
             return [];
         }
 
-        const usersWithUnseenJobListings: { email: string, unseenJobListings: JobListing[] }[] = [];
+        let usersWithUnseenJobListings: { email: string, unseenJobListings: JobListing[] }[] = [];
 
         for (const user of users) {
             if (!user.email) {
@@ -61,7 +63,7 @@ const getEmailsToSend = async (): Promise<{ email: string, unseenJobListings: Jo
                 });
 
             // Flatten job listings into a single array
-            const jobListings: JobListing[] | [] = searchTerms.flatMap(term => term.jobListings as unknown as JobListing[]);
+            let jobListings: JobListing[] | [] = searchTerms.flatMap(term => term.jobListings as unknown as JobListing[]);
 
             // Get the user's seen job IDs
             const seenJobIds = user.seenJobListings
