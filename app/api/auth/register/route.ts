@@ -65,7 +65,7 @@ export async function POST(originalReq: Request) {
 
         sendMail(email, 'Activate Your Account', message);
 
-        return NextResponse.json({ message: 'User created successfully', error: false }, { status: 400 });
+        return NextResponse.json({ message: 'User created successfully', error: false });
 
     } catch (error) {
         console.log("error registering: ", error)

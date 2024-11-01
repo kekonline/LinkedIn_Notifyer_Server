@@ -24,8 +24,6 @@ export async function POST(originalReq: Request) {
             return NextResponse.json({ message: 'All fields are required', error: true }, { status: 400 });
         }
 
-
-
         const logingInUser = await User.findOne({ email });
         if (logingInUser === null) {
             return NextResponse.json({ message: 'Email not registered', error: true }, { status: 400 });
@@ -57,7 +55,7 @@ export async function POST(originalReq: Request) {
         return NextResponse.json({ authToken });
     } catch (error) {
         console.log("Error logging in:", error);
-        return NextResponse.json({ error: 'Error logging in' }, { status: 500 });
+        return NextResponse.json({ message: 'Error logging in', error: true }, { status: 500 });
     }
 
 }
