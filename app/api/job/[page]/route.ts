@@ -9,7 +9,7 @@ export async function GET(originalReq: Request) {
 
     try {
         await conectToDB();
-        //  await JobListing.find({}); if the collecton is not crated
+        await JobListing.find({});
         const req = (await authentication(originalReq)) as Request & {
             payload?: { _id: string };
         };
