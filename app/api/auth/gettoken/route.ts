@@ -21,6 +21,6 @@ export async function GET() {
         return NextResponse.json({ authToken });
     } catch (error) {
         console.log("Error Signing Up User: ", error);
-        return NextResponse.json({ error: 'Error Signing Up User' }, { status: 500 });
+        return NextResponse.json({ message: 'Error Signing Up User', error: true }, { status: 500 });
     }
 }

@@ -1,11 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import axiosInstance from "../../services/axiosInstance";
+import { useRouter } from 'next/navigation';
+import { AuthContext, AuthContextType, } from "../../context/authorization";
 
 function ForgotPassword() {
   const [email, setEmail] = useState<string>("");
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState<string>("");
+
+  const { userEnrolled } = useContext(AuthContext) as AuthContextType;
+  const router = useRouter();
+
+  useEffect(() => {
+    if (userEnrolled === false) {
+      router.push('/');
+    }
+  }, [router, userEnrolled]);
+
 
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement>,

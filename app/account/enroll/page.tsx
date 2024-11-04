@@ -1,17 +1,23 @@
 "use client";
 
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import axiosInstance from "../../services/axiosInstance";
 import { useRouter } from 'next/navigation';
-import { AuthContext, AuthContextType } from "../../context/authorization";
+import { AuthContext, AuthContextType, } from "../../context/authorization";
 
 function Enroll() {
-  const { verifyToken } = useContext(AuthContext) as AuthContextType;
+  const { verifyToken, userEnrolled } = useContext(AuthContext) as AuthContextType;
   const [enrollType, setEnrollType] = useState<"login" | "register">("login");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [password2, setPassword2] = useState<string>("");
   const router = useRouter();
+
+  useEffect(() => {
+    if (userEnrolled === true) {
+      router.push('/');
+    }
+  }, [router, userEnrolled]);
 
   const handleEnrollType = () => {
     setEnrollType(enrollType === "login" ? "register" : "login");

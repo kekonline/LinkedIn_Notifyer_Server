@@ -63,6 +63,6 @@ export async function GET(originalReq: Request) {
 
     } catch (error) {
         console.log(error);
-        return NextResponse.json({ error: 'An error occurred while fetching job listings' }, { status: 500 });
+        return NextResponse.json({ message: 'An error occurred while fetching job listings', error: true }, { status: 500 });
     }
 }

@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import axiosInstance from "../../../services/axiosInstance";
 import { useParams } from 'next/navigation'
+import { AuthContext, AuthContextType } from "../../../context/authorization";
+import { useRouter } from 'next/navigation';
 
 function ResetPassword() {
   const [email, setEmail] = useState<string>("");
@@ -9,6 +11,18 @@ function ResetPassword() {
   const params = useParams<{ token: string }>();
   const { token } = params;
   const [resetPasswordMessage, setResetPasswordMessage] = useState<string | null>(null);
+
+
+  const authContext = useContext(AuthContext);
+  const { userEnrolled } = authContext as AuthContextType;
+  const router = useRouter();
+
+
+  useEffect(() => {
+    if (userEnrolled === false) {
+      router.push('/');
+    }
+  }, [router, userEnrolled]);
 
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement>,
