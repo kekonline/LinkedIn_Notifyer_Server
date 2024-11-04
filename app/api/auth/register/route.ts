@@ -69,7 +69,7 @@ export async function POST(originalReq: Request) {
 
     } catch (error) {
         console.log("error registering: ", error)
-        return NextResponse.json({ error: 'Error registering' }, { status: 500 });
+        return NextResponse.json({ message: 'Error registering', error: true }, { status: 500 });
 
     }
 

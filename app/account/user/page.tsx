@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { AuthContext, AuthContextType } from "../../context/authorization";
 import axiosInstance from "../../services/axiosInstance";
 import { useRouter } from 'next/navigation';
@@ -13,11 +13,18 @@ function User() {
     setUserEmail,
     userGetNotifications,
     setUserGetNotifications,
+    userEnrolled,
     userIsActive,
   } = useContext(AuthContext) as AuthContextType;
 
   // console.log("userGetNotifications", userGetNotifications);
   const router = useRouter();
+
+  useEffect(() => {
+    if (userEnrolled === false) {
+      router.push('/');
+    }
+  }, [router, userEnrolled]);
 
   const handleCheckboxChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const newNotificationsSetting = event.target.checked;

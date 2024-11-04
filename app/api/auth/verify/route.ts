@@ -46,6 +46,6 @@ export async function GET(originalReq: Request) {
 
     } catch (error) {
         console.log("Error verifying user:", error);
-        return NextResponse.json({ error: 'Error verifying user' }, { status: 500 });
+        return NextResponse.json({ message: 'Error verifying user', error: true }, { status: 500 });
     }
 }

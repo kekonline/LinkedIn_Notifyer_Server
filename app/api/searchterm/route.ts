@@ -75,6 +75,6 @@ export async function POST(originalReq: Request) {
         return NextResponse.json({ message: "Search term updated successfully", error: false }, { status: 201 });
     } catch (error) {
         console.log("error in post search term: ", error)
-        return NextResponse.json({ error: 'Error updating search term' }, { status: 500 });
+        return NextResponse.json({ message: 'Error updating search term', error: true }, { status: 500 });
     }
 };

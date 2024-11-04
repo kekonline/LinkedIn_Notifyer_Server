@@ -49,7 +49,7 @@ export async function DELETE(originalReq: Request) {
 
     } catch (error) {
         console.log("error in delete search term: ", error)
-        return NextResponse.json({ error: 'Error deleting search term' }, { status: 500 });
+        return NextResponse.json({ message: 'Error deleting search term', error: true }, { status: 500 });
     }
 
 };

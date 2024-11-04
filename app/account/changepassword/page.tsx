@@ -1,15 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useRouter } from 'next/navigation';
 import axiosInstance from "../../services/axiosInstance";
-
+import { AuthContext, AuthContextType, } from "../../context/authorization";
 
 function ChangePassword() {
   const [oldPassword, setOldPassword] = useState<string>("");
   const [newPassword, setNewPassword] = useState<string>("");
   const [newPassword2, setNewPassword2] = useState<string>("");
+  const { userEnrolled } = useContext(AuthContext) as AuthContextType;
   const router = useRouter();
+
+  useEffect(() => {
+    if (userEnrolled === false) {
+      router.push('/');
+    }
+  }, [router, userEnrolled]);
 
 
   const handleInputChange = (
