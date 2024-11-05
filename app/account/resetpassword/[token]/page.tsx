@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useState, useContext } from "react";
 import axiosInstance from "../../../services/axiosInstance";
 import { useParams } from 'next/navigation'
@@ -19,7 +21,7 @@ function ResetPassword() {
 
 
   useEffect(() => {
-    if (userEnrolled === false) {
+    if (userEnrolled === true) {
       router.push('/');
     }
   }, [router, userEnrolled]);

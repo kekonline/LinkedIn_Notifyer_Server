@@ -24,7 +24,7 @@ async function runScrapingTasks() {
 
   try {
     console.log("Starting scraping tasks...");
-    // await scrapeJobListing();
+    await scrapeJobListing();
     await scrapeJobDescription();
     await sendJobsMail();
     await deleteUsersWithoutEmailAndOldCreatedDate();
@@ -38,6 +38,6 @@ async function runScrapingTasks() {
 
 // setInterval(runScrapingTasks, interval);
 
-runScrapingTasks();
+// runScrapingTasks();
 
 export default nextConfig;
