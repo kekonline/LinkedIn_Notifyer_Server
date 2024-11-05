@@ -2,14 +2,13 @@ import { NextResponse } from 'next/server';
 import User, { User as UserDocument } from './../../../models/User.model'; // Import User interface
 import JobListing from './../../../models/JobListing.model';
 import SearchTerm from './../../../models/SearchTerm.model';
-import { conectToDB, authentication } from './../../../middleware';
+import { authentication } from './../../../middleware';
 
 export async function GET(originalReq: Request) {
 
 
     try {
-        await conectToDB();
-        await JobListing.find({});
+        // await JobListing.find({});
         const req = (await authentication(originalReq)) as Request & {
             payload?: { _id: string };
         };

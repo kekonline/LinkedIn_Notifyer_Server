@@ -1,7 +1,7 @@
 // app/api/token/route.ts
 import { NextResponse } from 'next/server';
 import User from './../../../models/User.model';
-import { conectToDB, authentication } from './../../../middleware';
+import { authentication } from './../../../middleware';
 
 const maskEmail = (email: string) => {
 
@@ -15,7 +15,6 @@ const maskEmail = (email: string) => {
 export async function GET(originalReq: Request) {
 
     try {
-        await conectToDB();
         const req = (await authentication(originalReq)) as Request & {
             payload?: { _id: string };
         };

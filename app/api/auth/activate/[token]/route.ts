@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { conectToDB, authentication } from '../../../../middleware';
+import { authentication } from '../../../../middleware';
 import User from '../../../../models/User.model';
 
 
 export async function GET(originalReq: Request) {
     try {
-        await conectToDB();
         const req = (await authentication(originalReq)) as Request & {
             payload?: { _id: string };
         };

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import User from './../../../models/User.model';
 import SearchTerm from './../../../models/SearchTerm.model';
-import { conectToDB, authentication } from './../../../middleware';
+import { authentication } from './../../../middleware';
 
 export async function DELETE(originalReq: Request) {
 
@@ -10,7 +10,6 @@ export async function DELETE(originalReq: Request) {
 
     try {
 
-        await conectToDB();
         const req = (await authentication(originalReq)) as Request & {
             payload?: { _id: string };
         };

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import User from '../../../../models/User.model'; // Import User interface
 import JobListing from '../../../../models/JobListing.model';
-import { conectToDB, authentication } from '../../../../middleware';
+import { authentication } from '../../../../middleware';
 
 
 // Handler for creating a new job listing
@@ -9,7 +9,6 @@ export async function GET(originalReq: Request) {
 
     try {
 
-        await conectToDB();
         const req = (await authentication(originalReq)) as Request & {
             payload?: { _id: string };
         };
@@ -42,7 +41,6 @@ export async function PUT(originalReq: Request) {
 
 
     try {
-        await conectToDB();
         const req = (await authentication(originalReq)) as Request & {
             payload?: { _id: string };
         };
