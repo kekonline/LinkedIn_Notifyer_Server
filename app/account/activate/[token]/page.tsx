@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useState, useContext } from "react";
 import axiosInstance from "../../../services/axiosInstance";
 import { AuthContext, AuthContextType } from "../../../context/authorization";
@@ -25,7 +27,7 @@ function ActivateUser() {
       }
 
       try {
-        const response = await axiosInstance.get(`auth/activate/${token}`);
+        const response = await axiosInstance.get(`/api/auth/activate/${token}`);
         if (response.data.error) {
           // console.log("Error activating user");
           setUserIsActive(false);

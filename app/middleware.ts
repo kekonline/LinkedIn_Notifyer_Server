@@ -1,13 +1,8 @@
 // app/middleware.ts
 import { NextResponse } from 'next/server';
-import { connectToMongo } from './utils/dbConfig';
 import User from './models/User.model';
 import { expressjwt } from 'express-jwt';
 
-export async function conectToDB() {
-    await connectToMongo();
-    return NextResponse.next();
-}
 
 export async function authentication(request: Request) {
     const authMiddleware = expressjwt({

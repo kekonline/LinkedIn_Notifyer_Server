@@ -44,7 +44,7 @@ function AuthWrapper({ children }: AuthWrapperProps) {
       // console.log("authToken", authToken);
       if (!authToken || authToken === 'undefined' || authToken === null || authToken === '') {
         const newTokenResponse = await axiosInstance.get<{ authToken: string; errorMessage?: string }>('/api/auth/gettoken');
-        console.log('newTokenResponse', newTokenResponse);
+        // console.log('newTokenResponse', newTokenResponse);
         if (newTokenResponse.data.errorMessage) {
           throw new Error(newTokenResponse.data.errorMessage);
         }

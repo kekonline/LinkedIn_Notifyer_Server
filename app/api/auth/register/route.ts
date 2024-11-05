@@ -1,4 +1,4 @@
-import { conectToDB, authentication } from './../../../middleware';
+import { authentication } from './../../../middleware';
 import User from './../../../models/User.model';
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
@@ -14,7 +14,6 @@ export async function POST(originalReq: Request) {
         return NextResponse.json({ message: 'All fields are required"', error: true }, { status: 400 });
     }
     try {
-        await conectToDB();
         const isEmailDuplicated = await User.findOne({ email });
         if (isEmailDuplicated) {
             return NextResponse.json({ message: 'Email already registered', error: true }, { status: 400 });

@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
 import User from './../../../models/User.model';
-import { conectToDB, authentication } from './../../../middleware';
+import { authentication } from './../../../middleware';
 import bcrypt from 'bcryptjs';
 
 export async function PUT(originalReq: Request) {        // console.log("token", req.payload)
     // console.log(req.body);
 
-    await conectToDB();
     const req = (await authentication(originalReq)) as Request & {
         payload?: { _id: string };
     };

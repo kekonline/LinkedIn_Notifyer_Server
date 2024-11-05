@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server';
 import User from './../../../models/User.model';
 import jwt from 'jsonwebtoken';
-import { conectToDB } from './../../../middleware';
 
 export async function GET() {
     try {
 
-        await conectToDB();
         console.log("Giving User Auth Token");
 
         const newUser = await User.create({}); // Create a new user (adjust as necessary)
