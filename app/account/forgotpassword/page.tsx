@@ -13,7 +13,7 @@ function ForgotPassword() {
   const router = useRouter();
 
   useEffect(() => {
-    if (userEnrolled === false) {
+    if (userEnrolled === true) {
       router.push('/');
     }
   }, [router, userEnrolled]);

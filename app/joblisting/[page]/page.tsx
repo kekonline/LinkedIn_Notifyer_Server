@@ -38,7 +38,7 @@ const JobLinsting = () => {
     event.preventDefault();
 
     try {
-      await axiosInstance.put(`api/job/id/${_id}`, {
+      await axiosInstance.put(`/api/job/id/${_id}`, {
         markAs
       });
       await getJobListings();
