@@ -6,6 +6,8 @@
 import "./globals.css";
 import { AuthWrapper } from './context/authorization';
 import NavBar from "./components/NavBar";
+import { ApolloProvider } from '@apollo/client';
+import client from './utils/apolloClient';
 
 
 // const geistSans = localFont({
@@ -30,15 +32,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <AuthWrapper>
-      <html lang="en">
-        <body
-        // className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          <NavBar />
-          {children}
-        </body>
-      </html>
-    </AuthWrapper>
+    <ApolloProvider client={client}>
+      <AuthWrapper>
+        <html lang="en">
+          <body
+          // className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          >
+            <NavBar />
+            {children}
+          </body>
+        </html>
+      </AuthWrapper>
+    </ApolloProvider>
   );
 }
