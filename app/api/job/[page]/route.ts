@@ -8,7 +8,7 @@ export async function GET(originalReq: Request) {
 
 
     try {
-        // await JobListing.find({});
+        await JobListing.find({});
         const req = (await authentication(originalReq)) as Request & {
             payload?: { _id: string };
         };
