@@ -1,62 +1,20 @@
+import { NextRequest } from 'next/server';
 import { ApolloServer } from '@apollo/server';
-import { gql } from 'graphql-tag';
 import { startServerAndCreateNextHandler } from '@as-integrations/next';
+import { resolvers } from './resolvers';
+import { gql } from 'graphql-tag';
+import { readFileSync } from 'fs';
+import path from 'path';
 
-// Define your GraphQL schema
-const typeDefs = gql`
-  type Query {
-    hello: String
-  }
-`;
+const typeDefs = gql(readFileSync(path.join(process.cwd(), 'app/api/graphql/schema.graphql'), 'utf8'));
 
-// Define your resolvers
-const resolvers = {
-  Query: {
-    hello: () => "Hello, World!",
-  },
-};
-
-// Initialize Apollo Server
 const server = new ApolloServer({
-  typeDefs,
   resolvers,
+  typeDefs,
 });
 
-// Export the handler for the GET method (GraphQL Playground)
-export const GET = startServerAndCreateNextHandler(server);
+const handler = startServerAndCreateNextHandler<NextRequest>(server, {
+  context: async req => ({ req }),
+});
 
-// Optional: export POST if necessary
-export const POST = startServerAndCreateNextHandler(server);
-
-export const config = {
-  api: {
-    bodyParser: false, // Disable body parsing for GraphQL requests
-  },
-};
-
-// import { ApolloServer } from "@apollo/server";
-// import { startServerAndCreateNextHandler } from "@as-integrations/next";
-// import { gql } from "graphql-tag";
-// import { NextResponse } from "next/server";
-
-// const typeDefs = gql`
-//   type Query {
-//     hello: String
-//   }
-// `;
-
-// const resolvers = {
-//   Query: {
-//     hello: () => "Hello, GraphQL!",
-//   },
-// };
-
-// const server = new ApolloServer({
-//   typeDefs,
-//   resolvers,
-// });
-
-// export async function GET(request: Request) {
-//   const handler = startServerAndCreateNextHandler(server);
-//   return handler(request);
-// }
+export { handler as GET, handler as POST };
