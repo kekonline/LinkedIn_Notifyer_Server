@@ -1,0 +1,20 @@
+type SearchTerm {
+  _id: ID!
+  term: String!
+  location: String!
+  jobType: String
+  users: [ID!]
+  jobListings: [ID!]
+  lastScraped: String
+  URL: String
+}
+
+type Query {
+  searchTerms: [SearchTerm!]!
+  searchTerm(id: ID!): SearchTerm
+}
+
+type Mutation {
+  createSearchTerm(term: String!, location: String!, jobType: String): SearchTerm!
+  deleteSearchTerm(id: ID!): String!
+}
