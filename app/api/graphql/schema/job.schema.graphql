@@ -1,0 +1,51 @@
+# schema.graphql
+
+type JobListing {
+    _id: ID!
+    title: String!
+    company: String!
+    description: String!
+    jobURL: String!
+    applyURL: String
+    searchTerms: [SearchTerm]!
+    scrapeRetries: Int!
+    createdAt: String!
+    updatedAt: String!
+}
+
+type SearchTerm {
+    _id: ID!
+    term: String!
+    jobListings: [JobListing]
+}
+
+type User {
+    _id: ID!
+    seenJobListings: [SeenJobListing]
+}
+
+type SeenJobListing {
+    jobListing: JobListing!
+    seen: Boolean
+    starred: Boolean
+}
+
+type Query {
+    getJobListings(page: String!): [JobListing!]!
+    getJobListingById(jobId: ID!): JobListing
+}
+
+type Mutation {
+    updateJobListingStatus(jobId: ID!, markAs: String!): String!
+}
+
+# Input Types
+input JobListingInput {
+    title: String!
+    company: String!
+    description: String!
+    jobURL: String!
+    applyURL: String
+    searchTerms: [ID!]!
+    scrapeRetries: Int
+}

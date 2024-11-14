@@ -422,7 +422,42 @@ export const resolvers = {
                 return { message: 'Error Signing Up User', error: true };
             }
         },
+        activateUser: async (_: any, args: { authToken: string }) => {
+            try {
+                const { authToken } = args;
 
+                // Verify the JWT token
+                const decoded: any = jwt.verify(authToken, process.env.TOKEN_SECRET as string);
+                const userId = decoded?._id;
+
+                if (!userId) {
+                    throw new Error('Token is invalid');
+                }
+
+                // Fetch user from the database
+                const user = await User.findById(userId);
+                if (!user) {
+                    throw new Error('User not found');
+                }
+
+                if (!user.email) {
+                    throw new Error('User email is required');
+                }
+
+                // Check if the user is already active
+                if (user.isActive) {
+                    throw new Error('User is already active');
+                }
+
+                // Update the user to active
+                await User.findByIdAndUpdate(userId, { isActive: true, 'token.value': null }, { new: true });
+
+                return true;  // Successfully activated the user
+            } catch (error) {
+                console.error('Error Activating User:', error);
+                throw new Error('Error Activating User');
+            }
+        },
 
     },
 };

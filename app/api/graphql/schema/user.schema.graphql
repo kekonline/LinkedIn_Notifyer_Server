@@ -57,7 +57,7 @@ type AuthResponse {
     updatePassword(oldPassword: String!, newPassword: String!): Response!
     login(email: String!, password: String!): AuthResponse!
     signUp(email: String!, password: String!): AuthResponse!
-
+activateUser(authToken: String!): Response!
     
   }
 
