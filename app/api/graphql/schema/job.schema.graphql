@@ -1,4 +1,4 @@
-# schema.graphql
+scalar DateTime
 
 type JobListing {
     _id: ID!
@@ -7,36 +7,42 @@ type JobListing {
     description: String!
     jobURL: String!
     applyURL: String
-    searchTerms: [SearchTerm]!
+    searchTerms: [SearchTerm!]! # Related search terms (full objects)
     scrapeRetries: Int!
-    createdAt: String!
-    updatedAt: String!
+    createdAt: DateTime!
+    updatedAt: DateTime!
 }
 
-type SearchTerm {
-    _id: ID!
-    term: String!
-    jobListings: [JobListing]
-}
+# type SearchTerm {
+#     _id: ID!
+#     term: String!
+#     jobListings: [ID!]! # List of JobListing IDs
+# }
 
 type User {
     _id: ID!
-    seenJobListings: [SeenJobListing]
+    seenJobListings: [SeenJobListing!]! # List of seen job listings
 }
 
 type SeenJobListing {
-    jobListing: JobListing!
+    jobListing: ID! # JobListing ID (referenced)
     seen: Boolean
     starred: Boolean
 }
 
 type Query {
-    getJobListings(page: String!): [JobListing!]!
-    getJobListingById(jobId: ID!): JobListing
+    getJobListings(page: Int!, limit: Int, offset: Int): [JobListing!]! # Paginated list of job listings
+    getJobListingById(jobId: ID!): JobListing # Retrieve a single job listing by ID
 }
 
 type Mutation {
-    updateJobListingStatus(jobId: ID!, markAs: String!): String!
+    updateJobListingStatus(jobId: ID!, markAs: JobListingMarkAs!): String! # Update the status of a job listing
+}
+
+# Enum for allowed values of markAs
+enum JobListingMarkAs {
+    SEEN
+    STARRED
 }
 
 # Input Types
@@ -46,6 +52,6 @@ input JobListingInput {
     description: String!
     jobURL: String!
     applyURL: String
-    searchTerms: [ID!]!
+    searchTerms: [ID!]! # Search term IDs to associate with the job listing
     scrapeRetries: Int
 }

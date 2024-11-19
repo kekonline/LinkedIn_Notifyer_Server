@@ -1,22 +1,32 @@
-import { AuthenticationError } from 'apollo-server-express';
 import SearchTerm from './../../../models/SearchTerm.model';
 import User from './../../../models/User.model';
-import { authentication } from './middleware';
+import { GraphQLError } from 'graphql';
 
 const resolvers = {
     Query: {
         // Get all search terms associated with the authenticated user
-        searchTerms: async (_: any, __: any, { userId }: { userId: string }) => {
+        searchTerms: async (_: any, __: any, context: { req: Request, userId: string }) => {
+
+            const { userId } = context;
+
             if (!userId) {
-                throw new AuthenticationError('User not authenticated');
+                throw new GraphQLError('User not authenticated', {
+                    extensions: { code: 'UNAUTHENTICATED' },
+                });
             }
+
             return await SearchTerm.find({ users: userId }).select('-users').sort({ term: 1 });
         },
 
         // Get a single search term by its ID
-        searchTerm: async (_: any, { id }: { id: string }, { userId }: { userId: string }) => {
+        searchTerm: async (_: any, { id }: { id: string }, context: { req: Request, userId: string }) => {
+
+            const { userId } = context;
+
             if (!userId) {
-                throw new AuthenticationError('User not authenticated');
+                throw new GraphQLError('User not authenticated', {
+                    extensions: { code: 'UNAUTHENTICATED' },
+                });
             }
             return await SearchTerm.findById(id).select('-users');
         }
@@ -27,10 +37,15 @@ const resolvers = {
         createSearchTerm: async (
             _: any,
             { term, location, jobType }: { term: string; location: string; jobType: string },
-            { userId }: { userId: string }
+            context: { req: Request, userId: string }
         ) => {
+
+            const { userId } = context;
+
             if (!userId) {
-                throw new AuthenticationError('User not authenticated');
+                throw new GraphQLError('User not authenticated', {
+                    extensions: { code: 'UNAUTHENTICATED' },
+                });
             }
 
             if (!term || !location) {
@@ -59,9 +74,14 @@ const resolvers = {
         },
 
         // Delete a search term
-        deleteSearchTerm: async (_: any, { id }: { id: string }, { userId }: { userId: string }) => {
+        deleteSearchTerm: async (_: any, { id }: { id: string }, context: { req: Request, userId: string }) => {
+
+            const { userId } = context;
+
             if (!userId) {
-                throw new AuthenticationError('User not authenticated');
+                throw new GraphQLError('User not authenticated', {
+                    extensions: { code: 'UNAUTHENTICATED' },
+                });
             }
 
             const searchTerm = await SearchTerm.findById(id);
