@@ -1,11 +1,10 @@
 
 import User from '../../../models/User.model';
-import { authentication } from '../../../middleware';
 import { v4 as uuidv4 } from 'uuid';
 import { sendMail } from '../../../mailer/mailerJob';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-
+import { GraphQLError } from 'graphql';
 
 const maskEmail = (email: string) => {
     const [localPart, domainPart] = email.split('@');
@@ -18,13 +17,8 @@ export const resolvers = {
     Query: {
         verifyToken: async (_: any, __: any, context: any) => {
             try {
-                // const req = (await authentication(context.req)) as Request & {
-                //     payload?: { _id: string };
-                // };
 
-                // const userId = req.payload?._id;
-
-                const userId = "672934ef022b2b1de3e5d348"
+                const { userId } = context;
 
                 if (!userId) {
                     return {
@@ -77,14 +71,12 @@ export const resolvers = {
     Mutation: {
         updateNotificationPreference: async (_: any, args: { getNotifications: boolean }, context: any) => {
             try {
-                // const req = (await authentication(context.req)) as Request & {
-                //     payload?: { _id: string };
-                // };
+                const { userId } = context;
 
-                // const userId = req.payload?._id;
-                const userId = "672934ef022b2b1de3e5d348"
                 if (!userId) {
-                    return { message: 'Token is invalid', error: true };
+                    throw new GraphQLError('User not authenticated', {
+                        extensions: { code: 'UNAUTHENTICATED' },
+                    });
                 }
 
                 const user = await User.findById(userId);
@@ -116,12 +108,12 @@ export const resolvers = {
         },
         sendResetPasswordEmail: async (_: any, { email }: { email: string }, context: any) => {
             try {
-                const req = await authentication(context.req);
-
-                const userId = req.payload?._id;
+                const { userId } = context;
 
                 if (!userId) {
-                    return { message: 'Token is invalid', error: true };
+                    throw new GraphQLError('User not authenticated', {
+                        extensions: { code: 'UNAUTHENTICATED' },
+                    });
                 }
 
                 if (!email) {
@@ -165,6 +157,7 @@ export const resolvers = {
 
                 if (!user) {
                     return { message: 'User not found', error: true };
+
                 }
 
                 if (!user.email) {
@@ -200,16 +193,14 @@ export const resolvers = {
             }
         },
 
-        resendActivationEmail: async (_: any, __: any, context: { req: Request }) => {
+        resendActivationEmail: async (_: any, __: any, context: any) => {
             try {
-                const req = (await authentication(context.req)) as Request & {
-                    payload?: { _id: string };
-                };
-
-                const userId = req.payload?._id;
+                const { userId } = context;
 
                 if (!userId) {
-                    return { message: 'Token is invalid', error: true };
+                    throw new GraphQLError('User not authenticated', {
+                        extensions: { code: 'UNAUTHENTICATED' },
+                    });
                 }
 
                 const user = await User.findById(userId);
@@ -240,7 +231,7 @@ export const resolvers = {
                 return { message: 'Error re-sending activation email', error: true };
             }
         },
-        registerUser: async (_: any, args: { email: string; password: string }, context: { req: Request }) => {
+        registerUser: async (_: any, args: { email: string; password: string }, context: { req: Request, userId: string }) => {
             const { email, password } = args;
 
             if (!email || !password) {
@@ -253,14 +244,12 @@ export const resolvers = {
                     return { message: 'Email already registered', error: true };
                 }
 
-                const req = (await authentication(context.req)) as Request & {
-                    payload?: { _id: string };
-                };
-
-                const userId = req.payload?._id;
+                const { userId } = context;
 
                 if (!userId) {
-                    return { message: 'Token is invalid', error: true };
+                    throw new GraphQLError('User not authenticated', {
+                        extensions: { code: 'UNAUTHENTICATED' },
+                    });
                 }
 
                 const isUserAlreadyRegistered = await User.findOne({ _id: userId });
@@ -305,15 +294,13 @@ export const resolvers = {
                 return { message: 'Error registering user', error: true };
             }
         },
-        updatePassword: async (_: any, args: { oldPassword: string; newPassword: string }, context: { req: Request }) => {
-            const req = (await authentication(context.req)) as Request & {
-                payload?: { _id: string };
-            };
-
-            const userId = req.payload?._id;
+        updatePassword: async (_: any, args: { oldPassword: string; newPassword: string }, context: { req: Request, userId: string }) => {
+            const { userId } = context;
 
             if (!userId) {
-                return { message: 'Token is invalid', error: true };
+                throw new GraphQLError('User not authenticated', {
+                    extensions: { code: 'UNAUTHENTICATED' },
+                });
             }
 
             const { oldPassword, newPassword } = args;
@@ -350,16 +337,15 @@ export const resolvers = {
                 return { message: 'Error updating password', error: true };
             }
         },
-        login: async (_: any, args: { email: string; password: string }, context: { req: Request }) => {
+        login: async (_: any, args: { email: string; password: string }, context: { req: Request, userId: string }) => {
             try {
-                // Authenticate request (optional, depending on token handling)
-                const req = (await authentication(context.req)) as Request & {
-                    payload?: { _id: string };
-                };
 
-                const userId = req.payload?._id;
+                const { userId } = context;
+
                 if (!userId) {
-                    return { message: 'Token is invalid', error: true };
+                    throw new GraphQLError('User not authenticated', {
+                        extensions: { code: 'UNAUTHENTICATED' },
+                    });
                 }
 
                 const { email, password } = args;
@@ -393,6 +379,7 @@ export const resolvers = {
         },
         signUp: async (_: any, args: { email: string; password: string }) => {
             try {
+
                 const { email, password } = args;
 
                 // Check if email already exists
@@ -461,3 +448,5 @@ export const resolvers = {
 
     },
 };
+
+export default resolvers;
