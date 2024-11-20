@@ -2,6 +2,8 @@
 
 import { useState, useEffect, createContext, ReactNode } from 'react';
 import axiosInstance from '../services/axiosInstance';
+import { useQuery, gql } from '@apollo/client';
+import { VERIFY_TOKEN } from '../graphql/queries/user';
 
 // Define the shape of your context
 export interface AuthContextType {
@@ -36,6 +38,25 @@ function AuthWrapper({ children }: AuthWrapperProps) {
   useEffect(() => {
     verifyToken();
   }, []);
+
+  const { data, loading, error: queryError } = useQuery(VERIFY_TOKEN);
+
+  useEffect(() => {
+    if (data) {
+      console.log('GraphQL data:', data);
+      // Do something with the GraphQL data (if needed)
+    }
+
+    if (loading) {
+      console.log('Loading...');
+    }
+
+    if (queryError) {
+      console.log('Error verifying token or loading new token:', queryError.message);
+    }
+  }, [data, loading, queryError]);
+
+
 
   const verifyToken = async () => {
     try {
