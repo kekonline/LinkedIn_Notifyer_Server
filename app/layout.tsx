@@ -2,7 +2,7 @@
 "use client";
 
 import "./globals.css";
-import { AuthWrapper } from './context/authorization';
+import { AuthWrapper } from './context/authorizationold';
 import NavBar from "./components/NavBar";
 import { ApolloProvider } from '@apollo/client';
 import client from './graphql/apolloClient';

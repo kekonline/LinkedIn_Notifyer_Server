@@ -106,6 +106,27 @@ export const resolvers = {
                 return { message: 'Error updating user information', error: true };
             }
         },
+        getToken: async (context: any) => {
+            try {
+
+                console.log("Giving User Auth Token");
+
+                const newUser = await User.create({}); // Create a new user (adjust as necessary)
+                console.log("newUser", newUser);
+
+                const payload = { _id: newUser._id };
+                const authToken = jwt.sign(payload, process.env.TOKEN_SECRET as string, {
+                    algorithm: "HS256",
+                    expiresIn: "365d",
+                });
+
+                return { authToken, message: "User Auth Token Given", error: false };
+            } catch (error) {
+                console.log("Error Signing Up User: ", error);
+                return { authToken: null, message: 'Error Signing Up User', error: true };
+            }
+
+        },
         sendResetPasswordEmail: async (_: any, { email }: { email: string }, context: any) => {
             try {
                 const { userId } = context;
