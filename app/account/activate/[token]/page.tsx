@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useContext } from "react";
 import axiosInstance from "../../../services/axiosInstance";
-import { AuthContext, AuthContextType } from "../../../context/authorization";
+import { AuthContext, AuthContextType } from "../../../context/authorizationold";
 import { useParams } from 'next/navigation'
 
 function ActivateUser() {

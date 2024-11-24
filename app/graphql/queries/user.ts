@@ -13,3 +13,13 @@ export const VERIFY_TOKEN = gql`
     }
   }
 `;
+
+export const GET_TOKEN = gql`
+  query getToken {
+    getToken {
+      message
+      error
+      authToken
+    }
+  }
+`;

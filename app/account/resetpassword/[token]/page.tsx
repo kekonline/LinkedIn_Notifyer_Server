@@ -3,7 +3,7 @@
 import { useEffect, useState, useContext } from "react";
 import axiosInstance from "../../../services/axiosInstance";
 import { useParams } from 'next/navigation'
-import { AuthContext, AuthContextType } from "../../../context/authorization";
+import { AuthContext, AuthContextType } from "../../../context/authorizationold";
 import { useRouter } from 'next/navigation';
 
 function ResetPassword() {

@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { AuthContext } from "../context/authorization";
+import { AuthContext } from "../context/authorizationold";
 import Link from 'next/link'
 import "./NavBar.css"
 

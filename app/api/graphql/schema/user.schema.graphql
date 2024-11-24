@@ -49,6 +49,7 @@ type AuthResponse {
   }
 
   type Mutation {
+      getToken: AuthResponse!
     updateNotificationPreference(getNotifications: Boolean!): Response!
     sendResetPasswordEmail(email: String!): Response!
   resetPassword(email: String!, password: String!, token: String!): Response!

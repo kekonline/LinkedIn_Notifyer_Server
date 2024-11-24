@@ -3,7 +3,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useRouter } from 'next/navigation';
 import axiosInstance from "../../services/axiosInstance";
-import { AuthContext, AuthContextType, } from "../../context/authorization";
+import { AuthContext, AuthContextType, } from "../../context/authorizationold";
 
 function ChangePassword() {
   const [oldPassword, setOldPassword] = useState<string>("");

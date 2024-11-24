@@ -1,7 +1,7 @@
 "use client";
 
 import Image from 'next/image';
-import { AuthContext, AuthContextType } from "./context/authorization";
+import { AuthContext, AuthContextType } from "./context/authorizationold";
 import BarLoader from "react-spinners/BarLoader";
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useContext } from 'react';
