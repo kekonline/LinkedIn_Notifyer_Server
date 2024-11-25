@@ -31,7 +31,7 @@ type SeenJobListing {
 }
 
 type Query {
-    getJobListings(page: Int!, limit: Int, offset: Int): [JobListing!]! # Paginated list of job listings
+    getJobListings(page: String!): [JobListing!]! # Paginated list of job listings
     getJobListingById(jobId: ID!): JobListing # Retrieve a single job listing by ID
 }
 

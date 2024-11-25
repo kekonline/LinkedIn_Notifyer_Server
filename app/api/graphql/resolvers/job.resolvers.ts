@@ -19,6 +19,8 @@ const resolvers = {
                 });
             }
 
+            console.log("page", page)
+
             // Get search terms and associated job listings for the user
             const searchTerms = await SearchTerm.find({ users: userId }).populate({
                 path: 'jobListings',
