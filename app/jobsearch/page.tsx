@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import axiosInstance from "../services/axiosInstance"
+// import axiosInstance from "../services/axiosInstance"
+import { useQuery, useMutation, gql } from "@apollo/client";
+import { GET_SEARCH_TERMS } from "../graphql/queries/searchTerm";
+import { CREATE_SEARCH_TERM, DELETE_SEARCH_TERM } from "../graphql/mutations/searchTerm";
 
 
 function JobSearch() {
@@ -16,6 +19,10 @@ function JobSearch() {
   const [inputLocation, setInputLocation] = useState<string>('');
   const [inputJobSearchTerm, setInputJobSearchTerm] = useState<string>('');
   const [jobSearchTermList, setJobSearchTermList] = useState<JobSearchTermType[]>([]);
+
+  const { data: serchTermData, } = useQuery(GET_SEARCH_TERMS)
+
+  console.log("serchTermData", serchTermData)
 
   const handleJobTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setJobType(event.target.value);

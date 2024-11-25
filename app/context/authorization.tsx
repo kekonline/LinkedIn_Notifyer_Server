@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, createContext, ReactNode } from "react";
-import { useQuery, gql } from "@apollo/client";
-import { VERIFY_TOKEN, GET_TOKEN } from "../graphql/queries/user";
+import { useState, useEffect, createContext, ReactNode, use } from "react";
+import { useQuery, useMutation, gql } from "@apollo/client";
+import { VERIFY_TOKEN } from "../graphql/queries/user";
+import { GET_TOKEN } from "../graphql/mutations/user";
 
 // Define the shape of your context
 export interface AuthContextType {
@@ -34,45 +35,48 @@ function AuthWrapper({ children }: AuthWrapperProps) {
     const [userGetNotifications, setUserGetNotifications] = useState<boolean>(false);
     const [userIsActive, setUserIsActive] = useState<boolean>(false);
 
-    const {
-        data: verifyTokenData,
-        loading: verifyTokenLoading,
-        error: verifyTokenError,
-    } = useQuery(VERIFY_TOKEN);
-
-    const {
-        data: getTokenData,
-        loading: getTokenLoading,
-        error: getTokenError,
-    } = useQuery(GET_TOKEN);
+    const [getToken] = useMutation(GET_TOKEN);
+    const { data: verifyData, refetch: refetchVerifyToken } = useQuery(VERIFY_TOKEN, {
+        skip: true, // We'll trigger this manually after ensuring the token is set
+    });
 
     useEffect(() => {
-        if (getTokenData) {
-            const { authToken } = getTokenData.getToken; // Ensure query returns an object with authToken
-            if (authToken) {
-                localStorage.setItem("authToken", authToken);
-            }
-        }
+        verifyToken();
+    }, []);
 
-        if (verifyTokenData) {
-            const { enrolled, email, getNotifications, isActive } = verifyTokenData.verifyToken; // Ensure query returns this structure
+    const verifyToken = async () => {
+        try {
+            let authToken = localStorage.getItem("authToken");
+
+            // Fetch a new token if none exists
+            if (!authToken || authToken === "undefined" || authToken === null || authToken === "") {
+                const { data } = await getToken();
+                if (data.getToken.errorMessage) {
+                    throw new Error(data.getToken.errorMessage);
+                }
+
+                authToken = data.getToken.authToken;
+                localStorage.setItem("authToken", authToken || "");;
+            }
+
+            // Verify the token by fetching user details
+            const { data: userInfo } = await refetchVerifyToken();
+            if (userInfo.verifyToken.errorMessage) {
+                throw new Error(userInfo.verifyToken.errorMessage);
+            }
+
+            const { enrolled, email, getNotifications, isActive } = userInfo.verifyToken;
+
             setUserEnrolled(enrolled);
             setUserEmail(email);
             setUserGetNotifications(getNotifications);
             setUserIsActive(isActive);
             setuserCheckedIn(true);
-        }
-
-        if (verifyTokenError || getTokenError) {
-            console.error("Error verifying token or fetching new token", verifyTokenError || getTokenError);
+        } catch (error: any) {
+            console.error("Error verifying token or fetching user info:", error.message);
             localStorage.setItem("authToken", "");
-            setError((verifyTokenError || getTokenError)?.message || "An error occurred");
+            setError(error.message);
         }
-    }, [verifyTokenData, getTokenData, verifyTokenError, getTokenError]);
-
-    const verifyToken = () => {
-        // This function can be used for manual re-verification if needed.
-        // Leaving it empty for now as GraphQL queries handle this reactively.
     };
 
     const passedContext: AuthContextType = {

@@ -4,7 +4,9 @@
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from "react";
 import DOMPurify from 'dompurify';
-import axiosInstance from "../../services/axiosInstance"
+import { useQuery, gql } from "@apollo/client";
+import { GET_JOB_LISTINGS } from "../../graphql/queries/jobListings";
+// import axiosInstance from "../../services/axiosInstance"
 
 interface JobListingProps {
   _id: string;
@@ -24,10 +26,11 @@ const JobLinsting = () => {
 
   const [jobListingsList, setJobListingsList] = useState([]);
 
+  const { loading, error, data } = useQuery(GET_JOB_LISTINGS, { variables: { page: page } });
+
   const getJobListings = async () => {
-    const responseJobListings = await axiosInstance.get("/api/job/" + page);
-    // console.log("responseJobListings", responseJobListings.data)
-    setJobListingsList(responseJobListings.data["jobListings"]);
+
+    console.log("Job Listings", data)
   };
 
   useEffect(() => {
@@ -37,14 +40,14 @@ const JobLinsting = () => {
   const handleMarkAs = async (event: React.MouseEvent<HTMLButtonElement>, _id: string, markAs: string) => {
     event.preventDefault();
 
-    try {
-      await axiosInstance.put(`/api/job/id/${_id}`, {
-        markAs
-      });
-      await getJobListings();
-    } catch (error) {
-      console.log(error);
-    }
+    // try {
+    //   await axiosInstance.put(`/api/job/id/${_id}`, {
+    //     markAs
+    //   });
+    //   await getJobListings();
+    // } catch (error) {
+    //   console.log(error);
+    // }
   };
 
 
