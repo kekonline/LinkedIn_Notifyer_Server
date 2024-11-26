@@ -1,13 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
-// import axiosInstance from "../services/axiosInstance"
-import { useQuery, useMutation, gql } from "@apollo/client";
+import { useQuery, useMutation } from "@apollo/client";
 import { GET_SEARCH_TERMS } from "../graphql/queries/searchTerm";
 import { CREATE_SEARCH_TERM, DELETE_SEARCH_TERM } from "../graphql/mutations/searchTerm";
 
-
 function JobSearch() {
-
   interface JobSearchTermType {
     _id: string;
     term: string | null;
@@ -20,9 +17,16 @@ function JobSearch() {
   const [inputJobSearchTerm, setInputJobSearchTerm] = useState<string>('');
   const [jobSearchTermList, setJobSearchTermList] = useState<JobSearchTermType[]>([]);
 
-  const { data: serchTermData, } = useQuery(GET_SEARCH_TERMS)
+  // GraphQL Queries and Mutations
+  const { data: searchTermData, refetch } = useQuery(GET_SEARCH_TERMS);
+  const [createSearchTerm] = useMutation(CREATE_SEARCH_TERM);
+  const [deleteSearchTerm] = useMutation(DELETE_SEARCH_TERM);
 
-  console.log("serchTermData", serchTermData)
+  useEffect(() => {
+    if (searchTermData) {
+      setJobSearchTermList(searchTermData.searchTerms);
+    }
+  }, [searchTermData]);
 
   const handleJobTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setJobType(event.target.value);
@@ -30,31 +34,33 @@ function JobSearch() {
 
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement>,
-    setter: React.Dispatch<React.SetStateAction<string>>) => {
+    setter: React.Dispatch<React.SetStateAction<string>>
+  ) => {
     setter(event.target.value);
   };
 
   const handleSaveEditName = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
 
-    // Validate not null and that values are not already in the array
     if (!inputJobSearchTerm || !inputLocation || !jobType) {
       console.log("Please fill in all fields");
       return;
     }
 
     try {
-      await axiosInstance.post("/api/searchterm/", {
-        term: inputJobSearchTerm,
-        location: inputLocation,
-        jobType: jobType,
+      await createSearchTerm({
+        variables: {
+          term: inputJobSearchTerm,
+          location: inputLocation,
+          jobType: jobType,
+        },
       });
-      await getSearchTerms();
-      setJobType("")
-      setInputLocation("")
-      setInputJobSearchTerm("")
+      setJobType("");
+      setInputLocation("");
+      setInputJobSearchTerm("");
+      await refetch(); // Refresh data after mutation
     } catch (error) {
-      console.log(error);
+      console.error("Error creating search term:", error);
     }
   };
 
@@ -62,26 +68,17 @@ function JobSearch() {
     event.preventDefault();
 
     try {
-      await axiosInstance.delete("/api/searchterm/" + _id);
-      await getSearchTerms();
+      const { data } = await deleteSearchTerm({
+        variables: { id: _id },
+      });
+      console.log("Deletion response:", data.deleteSearchTerm); // Should log "Search term deleted successfully"
+      setJobSearchTermList((prev) => prev.filter((term) => term._id !== _id)); // Update local state
     } catch (error) {
-      console.log(error);
+      console.error("Error deleting search term:", error);
     }
   };
 
-  const getSearchTerms = async () => {
-    try {
-      const responseSearchTerms = await axiosInstance.get("/api/searchterm");
-      console.log("responseSearchTerms", responseSearchTerms);
-      setJobSearchTermList(responseSearchTerms.data.searchTerms);
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
-  useEffect(() => {
-    getSearchTerms();
-  }, []);
 
   return (
     <div>
@@ -90,7 +87,8 @@ function JobSearch() {
       <ul>
         {jobSearchTermList.map((term: JobSearchTermType) => (
           <li key={term._id}>
-            {term.term} - {term.location} - {term.jobType} <button onClick={(event) => handleDelete(term._id, event)}>🚮</button>
+            {term.term} - {term.location} - {term.jobType}{" "}
+            <button onClick={(event) => handleDelete(term._id, event)}>🚮</button>
           </li>
         ))}
       </ul>

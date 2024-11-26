@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import DOMPurify from 'dompurify';
 import { useQuery, gql } from "@apollo/client";
 import { GET_JOB_LISTINGS } from "../../graphql/queries/jobListings";
-// import axiosInstance from "../../services/axiosInstance"
+import axiosInstance from "../../services/axiosInstance"
 
 interface JobListingProps {
   _id: string;
@@ -40,14 +40,14 @@ const JobLinsting = () => {
   const handleMarkAs = async (event: React.MouseEvent<HTMLButtonElement>, _id: string, markAs: string) => {
     event.preventDefault();
 
-    // try {
-    //   await axiosInstance.put(`/api/job/id/${_id}`, {
-    //     markAs
-    //   });
-    //   await getJobListings();
-    // } catch (error) {
-    //   console.log(error);
-    // }
+    try {
+      await axiosInstance.put(`/api/job/id/${_id}`, {
+        markAs
+      });
+      await getJobListings();
+    } catch (error) {
+      console.log(error);
+    }
   };
 
 

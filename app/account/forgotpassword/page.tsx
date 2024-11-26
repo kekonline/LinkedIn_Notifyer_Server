@@ -3,7 +3,7 @@
 import { useState, useEffect, useContext } from "react";
 import axiosInstance from "../../services/axiosInstance";
 import { useRouter } from 'next/navigation';
-import { AuthContext, AuthContextType, } from "../../context/authorizationold";
+import { AuthContext, AuthContextType, } from "../../context/authorizationOld";
 
 function ForgotPassword() {
   const [email, setEmail] = useState<string>("");

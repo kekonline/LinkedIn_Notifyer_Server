@@ -2,19 +2,26 @@
 import { gql } from '@apollo/client';
 
 export const CREATE_SEARCH_TERM = gql`
-  mutation CreateSearchTerm($jobId: String!, $markAs: String!) {
-    createSearchTerm(jobId: $jobId, markAs: $markAs) {
-    id
+  mutation CreateSearchTerm($term: String!, $location: String!, $jobType: String!) {
+    createSearchTerm( term: $term, location: $location, jobType: $jobType) {
+    _id
+    term
+    location
+    jobType
+    users
+    jobListings
+    lastScraped
+    URL
     }
   }
 `;
 
 
 export const DELETE_SEARCH_TERM = gql`
-  mutation DeleteSearchTerm($id: String!) {
-    deleteSearchTerm( id: $id) {
-    message
-    }
+  mutation DeleteSearchTerm($id: ID!) {
+    deleteSearchTerm(id: $id)
   }
 `;
+
+
 
