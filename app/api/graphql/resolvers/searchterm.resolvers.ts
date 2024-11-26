@@ -75,7 +75,6 @@ const resolvers = {
 
         // Delete a search term
         deleteSearchTerm: async (_: any, { id }: { id: string }, context: { req: Request, userId: string }) => {
-
             const { userId } = context;
 
             if (!userId) {

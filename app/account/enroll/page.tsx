@@ -3,10 +3,10 @@
 import { useState, useContext, useEffect } from "react";
 import axiosInstance from "../../services/axiosInstance";
 import { useRouter } from 'next/navigation';
-import { AuthContext, AuthContextType, } from "../../context/authorizationold";
+import { AuthContextOld, AuthContextTypeOld, } from "../../context/authorizationOld";
 
 function Enroll() {
-  const { verifyToken, userEnrolled } = useContext(AuthContext) as AuthContextType;
+  const { verifyToken, userEnrolled } = useContext(AuthContextOld) as AuthContextTypeOld;
   const [enrollType, setEnrollType] = useState<"login" | "register">("login");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");

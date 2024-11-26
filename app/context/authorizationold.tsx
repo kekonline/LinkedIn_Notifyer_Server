@@ -2,11 +2,9 @@
 
 import { useState, useEffect, createContext, ReactNode } from 'react';
 import axiosInstance from '../services/axiosInstance';
-import { useQuery, gql } from '@apollo/client';
-import { VERIFY_TOKEN } from '../graphql/queries/user';
 
 // Define the shape of your context
-export interface AuthContextType {
+export interface AuthContextTypeOld {
   verifyToken: () => Promise<void>;
   userEnrolled: boolean;
   setUserEnrolled: React.Dispatch<React.SetStateAction<boolean>>;
@@ -21,13 +19,13 @@ export interface AuthContextType {
 }
 
 // Create the context with default values
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContextOld = createContext<AuthContextTypeOld | undefined>(undefined);
 
 interface AuthWrapperProps {
   children: ReactNode; // To allow passing child components
 }
 
-function AuthWrapper({ children }: AuthWrapperProps) {
+function AuthWrapperOld({ children }: AuthWrapperProps) {
   const [error, setError] = useState<string | null>(null);
   const [userCheckedIn, setuserCheckedIn] = useState<boolean>(false);
   const [userEnrolled, setUserEnrolled] = useState<boolean>(false);
@@ -38,25 +36,6 @@ function AuthWrapper({ children }: AuthWrapperProps) {
   useEffect(() => {
     verifyToken();
   }, []);
-
-  const { data, loading, error: queryError } = useQuery(VERIFY_TOKEN);
-
-  useEffect(() => {
-    if (data) {
-      console.log('GraphQL data:', data);
-      // Do something with the GraphQL data (if needed)
-    }
-
-    if (loading) {
-      console.log('Loading...');
-    }
-
-    if (queryError) {
-      console.log('Error verifying token or loading new token:', queryError.message);
-    }
-  }, [data, loading, queryError]);
-
-
 
   const verifyToken = async () => {
     try {
@@ -104,7 +83,7 @@ function AuthWrapper({ children }: AuthWrapperProps) {
     }
   };
 
-  const passedContext: AuthContextType = {
+  const passedContext: AuthContextTypeOld = {
     verifyToken,
     userEnrolled,
     setUserEnrolled,
@@ -118,7 +97,7 @@ function AuthWrapper({ children }: AuthWrapperProps) {
     error,
   };
 
-  return <AuthContext.Provider value={passedContext}>{children}</AuthContext.Provider>;
+  return <AuthContextOld.Provider value={passedContext}>{children}</AuthContextOld.Provider>;
 }
 
-export { AuthContext, AuthWrapper };
+export { AuthContextOld, AuthWrapperOld };
