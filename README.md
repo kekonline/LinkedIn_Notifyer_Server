@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LinkedIn Notifyer Server
 
-## Getting Started
+![Logo](https://raw.githubusercontent.com/kekonline/LinkedIn_Notifyer_Server/refs/heads/master/public/splash_screen_logo.png)
 
-First, run the development server:
+## About the Project
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+**LinkedIn Notifyer Server** is a backend application designed to help job seekers by automating job search processes on LinkedIn. It scrapes job listings based on user-defined search terms and sends email notifications about the latest opportunities. This app ensures you never miss relevant job offers and saves time by eliminating the need to constantly check LinkedIn manually.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This project was initially a full-stack (frontend and backend) application but later evolved into a backend-focused project. One of its main purposes was to explore various frameworks and technologies, which you can review in the repository's branches.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Purpose
 
-## Learn More
+The goal of this app is to simplify the job-hunting process by automatically scraping desired job offers and notifying users by email as quickly as possible. It caters to users who want to focus on their search terms while avoiding repetitive manual effort.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Tech Stacks
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This project was implemented with multiple tech stacks, each explored in a separate branch:
 
-## Deploy on Vercel
+1. **Express.js with MongoDB (JavaScript backend)**
+2. **Express.js with MongoDB (TypeScript backend)**
+3. **NestJS with MongoDB (TypeScript backend)**
+4. **Next.js with MongoDB (TypeScript and React full-stack)**
+5. **Next.js with GraphQL and MongoDB (TypeScript and React full-stack)**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+For scraping, **Puppeteer** is used with advanced techniques to bypass detection and ensure smooth operation.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Features
+
+- **Manage Job Listings**  
+  View all scraped job offers and organize them as:
+  - *Seen*: Offers you've reviewed.
+  - *Not Seen*: New offers waiting for your attention.
+  - *Not Interested*: Offers you're not considering.
+
+- **Custom Search Terms**  
+  Create and manage search terms to filter job offers tailored to your preferences.
+
+- **Automated Email Notifications**  
+  Receive instant email updates when new job listings matching your search terms are available.
+
+- **Auto-Login**  
+  Enjoy a seamless experience without needing to log in repeatedly.
+
+- **Account Verification via Email**  
+  Secure your account with an email-based verification process.
+
+- **Forgot Password Functionality**  
+  Reset your password quickly and securely.
+
+- **Additional Features**  
+  - Disguised scraping techniques for better reliability.
+  - Scalable architecture to accommodate future enhancements.
+  - Comprehensive support for multiple frameworks and stacks.
+
+---
+
+## Explore the Branches
+This repository features multiple branches showcasing different implementations. Each branch represents a specific tech stack, so feel free to explore them for insights into various approaches.
+
+## 💼 Purpose
+This project was created to experiment with building the same app using different frameworks and stacks. It highlights the pros and cons of each approach and serves as a resource for developers exploring these technologies.
+
+
+
+
+
