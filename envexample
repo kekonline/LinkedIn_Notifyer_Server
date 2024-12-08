@@ -1,0 +1,22 @@
+# Application Configurations
+TOKEN_SECRET=
+PORT=5005
+ORIGIN=http://localhost:3000 # Change as needed: e.g., http://localhost:5173 for Express
+
+# Proxy Configurations
+PROXY1=
+PROXY1AXIOS=
+PROXY1PORTAXIOS=
+PROXY2=
+PROXY_SITE=
+
+# Proxy Authentication
+PROXYUSER=
+PROXYPASS=
+
+# Gmail Credentials
+GMAILUSER=
+GMAILPASS="
+
+# Time Ago Config (in minutes)
+TIME_AGO=5
